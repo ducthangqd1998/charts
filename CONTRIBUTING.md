@@ -122,7 +122,7 @@ sources:
   - https://github.com/ducthangqd1998/charts
 maintainers:
   - name: Thang Mai
-    email: ducthangqd1998@gmail.com
+    email: maiducthang.it@gmail.com
 ```
 
 ### values.yaml Standards
