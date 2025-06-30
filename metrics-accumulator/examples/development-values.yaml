@@ -1,0 +1,83 @@
+# Development values for metrics-accumulator
+# This file provides a development-friendly configuration
+
+replicaCount: 1
+
+image:
+  repository: bpoole6/metrics-accumulator
+  tag: "latest"
+  pullPolicy: Always
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Disable autoscaling for development
+autoscaling:
+  enabled: false
+
+# No persistence needed for development
+persistence:
+  enabled: false
+
+service:
+  type: NodePort
+  port: 8080
+  targetPort: 8080
+
+# Enable ingress for easy access
+ingress:
+  enabled: true
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  hosts:
+    - host: metrics-accumulator.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Enable ServiceMonitor for testing with Prometheus
+serviceMonitor:
+  enabled: true
+  interval: "15s"
+  scrapeTimeout: "5s"
+  path: "/metrics"
+
+# Relax security for development
+podSecurityContext: {}
+
+securityContext: {}
+
+# Faster probes for development
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+
+# Debug environment variables
+env:
+  - name: LOG_LEVEL
+    value: "DEBUG"
+  - name: METRICS_RETENTION_HOURS
+    value: "1"
+
+# No restrictions for development
+networkPolicy:
+  enabled: false
+
+ 
