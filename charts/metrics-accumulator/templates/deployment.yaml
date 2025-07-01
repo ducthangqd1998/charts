@@ -57,7 +57,7 @@ spec:
           {{- if .Values.config }}
           volumeMounts:
             - name: config
-              mountPath: /config/metrics-accumulator.yml
+              mountPath: /etc/metrics-accumulator/metrics-accumulator.yml
               subPath: metrics-accumulator.yml
           {{- end }}
           {{- if or .Values.env .Values.extraEnvFrom }}
