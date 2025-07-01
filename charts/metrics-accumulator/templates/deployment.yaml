@@ -54,6 +54,12 @@ spec:
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.config }}
+          volumeMounts:
+            - name: config
+              mountPath: /config/metrics-accumulator.yml
+              subPath: metrics-accumulator.yml
+          {{- end }}
           {{- if or .Values.env .Values.extraEnvFrom }}
           env:
             {{- if .Values.env }}
@@ -91,6 +97,12 @@ spec:
           persistentVolumeClaim:
             claimName: {{ include "metrics-accumulator.fullname" . }}
         {{- end }}
+      {{- end }}
+      {{- if .Values.config }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "metrics-accumulator.fullname" . }}-config
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:

@@ -1,0 +1,11 @@
+{{- if .Values.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "metrics-accumulator.fullname" . }}-config
+  labels:
+    {{- include "metrics-accumulator.labels" . | nindent 4 }}
+data:
+  metrics-accumulator.yml: |-
+{{ .Values.config | indent 4 }}
+{{- end }} 

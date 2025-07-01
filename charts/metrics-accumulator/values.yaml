@@ -171,4 +171,13 @@ extraEnvFrom: []
 initContainers: []
 
 # Additional containers
-extraContainers: [] 
+extraContainers: []
+
+# Configuration file for metrics-accumulator (YAML content)
+# If provided, a ConfigMap will be created and mounted to the pod at /config/metrics-accumulator.yml
+config: |
+  # Example configuration for metrics-accumulator
+  # debug: true
+  # server:
+  #   port: 8080
+  # ... 
