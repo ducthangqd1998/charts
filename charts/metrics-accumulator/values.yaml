@@ -121,7 +121,7 @@ livenessProbe:
     command:
       - wget
       - -O
-      - -
+      - '-'
       - http://localhost:8080
   initialDelaySeconds: 0
   periodSeconds: 20
@@ -133,7 +133,7 @@ readinessProbe:
     command:
       - wget
       - -O
-      - -
+      - '-'
       - http://localhost:8080
   initialDelaySeconds: 0
   periodSeconds: 20
