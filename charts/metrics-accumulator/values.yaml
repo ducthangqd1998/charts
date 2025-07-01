@@ -173,11 +173,26 @@ initContainers: []
 # Additional containers
 extraContainers: []
 
-# Configuration file for metrics-accumulator (YAML content)
-# If provided, a ConfigMap will be created and mounted to the pod at /config/metrics-accumulator.yml
+# Configuration file for metrics-accumulator (raw YAML content)
+# If this field is non-empty a ConfigMap will be generated and mounted to the pod at
+#   /etc/metrics-accumulator/metrics-accumulator.yml
+# The application is started with the argument:
+#   --config-file=/etc/metrics-accumulator/metrics-accumulator.yml
+# so it will automatically pick up the configuration you place here.
+#
+# === How to customise ===
+# 1. Copy the block below, remove the leading "# " and adapt values as required.
+# 2. Keep correct YAML indentation (2 spaces).
+# 3. Leave this key completely empty (i.e. "config: |\n" with nothing below) if you
+#    prefer to rely on the container defaults.
+#
+# --- Sample configuration ----------------------------------------------------
+# debug: true
+# apiKey: "<your-push-api-key>"
+# server:
+#   port: 8080            # Port the service listens on inside the container
+#   cors: true            # Enable CORS for browser pushes
+# ttlMinutes: 60          # TTL for metric groups
+#
 config: |
-  # Example configuration for metrics-accumulator
-  # debug: true
-  # server:
-  #   port: 8080
-  # ... 
+# (uncomment and customise as shown in the sample above) 
