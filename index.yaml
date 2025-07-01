@@ -3,10 +3,10 @@ entries:
   metrics-accumulator:
   - apiVersion: v2
     appVersion: latest
-    created: "2025-07-01T09:07:21.770903+07:00"
+    created: "2025-07-01T14:14:11.975527+07:00"
     description: A Helm chart for metrics-accumulator - an alternative to Prometheus
       Pushgateway for Lambda functions
-    digest: fa88c1a3bbd37248260d177c086d107e976cd82d252a2b891e8ac16567100c85
+    digest: fc1fccceedd4432545b1142b9bc323e5ffc67ea2961b6ecc17d7f14ab98001c7
     home: https://github.com/ducthangqd1998/charts
     keywords:
     - metrics
@@ -23,6 +23,6 @@ entries:
     - https://github.com/ducthangqd1998/charts
     type: application
     urls:
-    - https://ducthangqd1998.github.io/charts/metrics-accumulator-0.1.2.tgz
-    version: 0.1.2
-generated: "2025-07-01T09:07:21.769334+07:00"
+    - https://ducthangqd1998.github.io/charts/metrics-accumulator-0.1.3.tgz
+    version: 0.1.3
+generated: "2025-07-01T14:14:11.974512+07:00"
