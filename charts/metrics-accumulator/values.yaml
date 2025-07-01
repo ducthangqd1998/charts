@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  # Sử dụng image từ bpoole6/metrics-accumulator hoặc custom image
+  # Image repository (default bpoole6/metrics-accumulator) or your custom image
   repository: bpoole6/metrics-accumulator
   tag: ""
   pullPolicy: IfNotPresent
@@ -186,14 +186,14 @@ extraContainers: []
 # 3. Leave this key completely empty (i.e. "config: |\n" with nothing below) if you
 #    prefer to rely on the container defaults.
 #
-# --- Ví dụ tối giản ---------------------------------------------------------
+# --- Minimal example ---------------------------------------------------------
 # global:
-#   hostAddress: metrics-accumulator:8080   # Địa chỉ service
+#   hostAddress: metrics-accumulator:8080   # Service address
 # metricGroups:
 #   default:
-#     apiKey: "<your-api-key>"             # Key cần gửi trong header X-API-KEY
+#     apiKey: "<your-api-key>"             # Key sent in HTTP header X-API-KEY
 #     serviceDiscoveryLabels:
-#       env: dev                            # Nhãn mặc định Prometheus
+#       env: dev                            # Default Prometheus labels
 # ---------------------------------------------------------------------------
 
 config: |
