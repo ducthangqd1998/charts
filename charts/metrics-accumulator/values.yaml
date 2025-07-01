@@ -186,13 +186,15 @@ extraContainers: []
 # 3. Leave this key completely empty (i.e. "config: |\n" with nothing below) if you
 #    prefer to rely on the container defaults.
 #
-# --- Sample configuration ----------------------------------------------------
-# debug: true
-# apiKey: "<your-push-api-key>"
-# server:
-#   port: 8080            # Port the service listens on inside the container
-#   cors: true            # Enable CORS for browser pushes
-# ttlMinutes: 60          # TTL for metric groups
-#
+# --- Ví dụ tối giản ---------------------------------------------------------
+# global:
+#   hostAddress: metrics-accumulator:8080   # Địa chỉ service
+# metricGroups:
+#   default:
+#     apiKey: "<your-api-key>"             # Key cần gửi trong header X-API-KEY
+#     serviceDiscoveryLabels:
+#       env: dev                            # Nhãn mặc định Prometheus
+# ---------------------------------------------------------------------------
+
 config: |
 # (uncomment and customise as shown in the sample above) 
