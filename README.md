@@ -10,7 +10,7 @@ This repository contains Helm charts that I've created to fill gaps in the Kuber
 
 ### [Metrics Accumulator](./metrics-accumulator)
 
-A Helm chart for [bpoole6/metrics-accumulator](https://github.com/bpoole6/metrics-accumulator-clients) - an alternative to Prometheus Pushgateway specifically designed for Lambda functions and ephemeral workloads.
+A Helm chart for [bpoole6/metrics-accumulator](https://github.com/bpoole6/metrics-accumulator) - an alternative to Prometheus Pushgateway specifically designed for Lambda functions and ephemeral workloads.
 
 **Why this chart was created:**
 - Prometheus Pushgateway doesn't handle Lambda metrics well (no TTL support)

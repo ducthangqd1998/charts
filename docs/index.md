@@ -7,7 +7,7 @@ Welcome to the official Helm charts repository of Thang Mai!
 ## 🚀 Helm Charts Available
 
 - [metrics-accumulator](../charts/metrics-accumulator)
-  - A production-ready Helm chart for [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator-clients), optimized for Lambda and ephemeral workloads.
+  - A production-ready Helm chart for [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator), optimized for Lambda and ephemeral workloads.
 
 ---
 

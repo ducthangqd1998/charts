@@ -4,7 +4,7 @@
 
 I encountered significant challenges when trying to push metrics from AWS Lambda functions to Prometheus. Traditional tools like Prometheus Pushgateway don't provide adequate support for Lambda functions, particularly because Lambda metrics don't have TTL (Time To Live) capabilities, which can lead to stale metrics accumulating indefinitely.
 
-[Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator-clients) is an excellent tool that addresses these specific needs for ephemeral and short-lived jobs like Lambda functions. However, it lacks a Helm chart for easy deployment on Kubernetes clusters.
+[Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) is an excellent tool that addresses these specific needs for ephemeral and short-lived jobs like Lambda functions. However, it lacks a Helm chart for easy deployment on Kubernetes clusters.
 
 This repository provides a comprehensive Helm chart for Metrics Accumulator, making it simple to deploy and manage in Kubernetes environments.
 
@@ -12,7 +12,7 @@ This repository provides a comprehensive Helm chart for Metrics Accumulator, mak
 
 ## Introduction
 
-This chart deploys [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator-clients) on a Kubernetes cluster using the [Helm](https://helm.sh) package manager.
+This chart deploys [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator) on a Kubernetes cluster using the [Helm](https://helm.sh) package manager.
 
 Metrics Accumulator is specifically designed as an alternative to Prometheus Pushgateway, optimized for Lambda functions and other ephemeral workloads.
 
@@ -237,7 +237,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## Acknowledgments
 
-- Thanks to [bpoole6](https://github.com/bpoole6) for the original [Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator-clients) project
+- Thanks to [bpoole6](https://github.com/bpoole6) for the original [Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) project
 - Inspired by the need for better Lambda metrics collection in Kubernetes environments
 
 ## License
