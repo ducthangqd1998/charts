@@ -1,0 +1,95 @@
+{{- range $key, $gateway := .Values.gateways }}
+{{- $defaultTargetGroup := $gateway.defaultTargetGroup | default dict }}
+{{- if and $gateway.enabled (eq $gateway.mode "dedicated") (or $gateway.loadBalancer $defaultTargetGroup.enabled) }}
+{{- $gatewayName := include "aws-alb-gateway.gatewayName" (dict "key" $key "gateway" $gateway) }}
+{{- $lb := $gateway.loadBalancer | default dict }}
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: LoadBalancerConfiguration
+metadata:
+  name: {{ include "aws-alb-gateway.lbConfigName" (dict "key" $key "gateway" $gateway) }}
+  namespace: {{ required (printf "gateways.%s.namespace is required" $key) $gateway.namespace }}
+  labels:
+    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: load-balancer-configuration
+    aws-alb-gateway.io/gateway-key: {{ $key | quote }}
+    {{- with $lb.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($lb.annotations | default dict) }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with $lb.loadBalancerName }}
+  loadBalancerName: {{ . | quote }}
+  {{- end }}
+  {{- with $lb.scheme }}
+  scheme: {{ . | quote }}
+  {{- end }}
+  {{- with $lb.ipAddressType }}
+  ipAddressType: {{ . | quote }}
+  {{- end }}
+  {{- with $lb.securityGroups }}
+  securityGroups:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- $subnets := default $lb.loadBalancerSubnets $lb.subnets }}
+  {{- with $subnets }}
+  loadBalancerSubnets:
+    {{- range . }}
+    {{- if kindIs "string" . }}
+    - identifier: {{ . | quote }}
+    {{- else }}
+    -
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- with $lb.loadBalancerSubnetsSelector }}
+  loadBalancerSubnetsSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $lb.tags }}
+  tags:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $lb.wafV2 }}
+  wafV2:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $lb.shield }}
+  shield:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $lb.loadBalancerAttributes }}
+  loadBalancerAttributes:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- $listenerConfigurations := list }}
+  {{- with $lb.listenerConfigurations }}
+  {{- $listenerConfigurations = concat $listenerConfigurations . }}
+  {{- end }}
+  {{- range $listener := $gateway.listeners }}
+  {{- if $listener.certificateArn }}
+  {{- $listenerConfigurations = append $listenerConfigurations (dict "protocolPort" (printf "%s:%v" $listener.protocol $listener.port) "defaultCertificate" $listener.certificateArn) }}
+  {{- end }}
+  {{- end }}
+  {{- if $listenerConfigurations }}
+  listenerConfigurations:
+    {{- toYaml $listenerConfigurations | nindent 4 }}
+  {{- end }}
+  {{- with $lb.minimumLoadBalancerCapacity }}
+  minimumLoadBalancerCapacity:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $lb.mergingMode }}
+  mergingMode: {{ . | quote }}
+  {{- end }}
+  {{- if $defaultTargetGroup.enabled }}
+  defaultTargetGroupConfiguration:
+    name: {{ include "aws-alb-gateway.defaultTgConfigName" (dict "key" $key "gateway" $gateway) }}
+  {{- end }}
+{{- end }}
+{{- end }}

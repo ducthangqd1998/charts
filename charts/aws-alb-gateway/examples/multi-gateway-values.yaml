@@ -1,0 +1,123 @@
+global:
+  gatewayClassName: alb
+  defaultTargetType: ip
+  labels:
+    example.com/environment: shared
+
+gateways:
+  public:
+    enabled: true
+    mode: dedicated
+    name: public-gateway
+    namespace: gateway-system
+    sectionName: https
+    listeners:
+      - name: https
+        protocol: HTTPS
+        port: 443
+        hostname: "*.public.example.org"
+        certificateArn: arn:aws:acm:us-east-1:111122223333:certificate/replace-me
+        allowedRoutes:
+          namespaces:
+            from: Selector
+            selector:
+              matchLabels:
+                gateway-access: public
+    loadBalancer:
+      scheme: internet-facing
+      ipAddressType: ipv4
+      tags:
+        Environment: shared
+        Scope: public
+    defaultTargetGroup:
+      enabled: true
+      targetType: ip
+      protocol: HTTP
+      protocolVersion: HTTP1
+      healthCheck:
+        path: /healthz
+        protocol: HTTP
+        port: traffic-port
+
+  private:
+    enabled: true
+    mode: dedicated
+    name: private-gateway
+    namespace: gateway-system
+    sectionName: https
+    listeners:
+      - name: https
+        protocol: HTTPS
+        port: 443
+        hostname: "*.private.example.org"
+        certificateArn: arn:aws:acm:us-east-1:111122223333:certificate/replace-me
+        allowedRoutes:
+          namespaces:
+            from: Selector
+            selector:
+              matchLabels:
+                gateway-access: private
+    loadBalancer:
+      scheme: internal
+      ipAddressType: ipv4
+      tags:
+        Environment: shared
+        Scope: private
+    defaultTargetGroup:
+      enabled: true
+      targetType: ip
+      protocol: HTTP
+      protocolVersion: HTTP1
+      healthCheck:
+        path: /healthz
+        protocol: HTTP
+        port: traffic-port
+
+routes:
+  public-app:
+    enabled: true
+    gateway: public
+    namespace: public-app
+    name: public-app
+    hostnames:
+      - app.public.example.org
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: public-app
+            port: 80
+    targetGroup:
+      enabled: true
+      healthCheck:
+        path: /healthz
+        protocol: HTTP
+        port: traffic-port
+    referenceGrant:
+      enabled: true
+
+  private-app:
+    enabled: true
+    gateway: private
+    namespace: private-app
+    name: private-app
+    hostnames:
+      - app.private.example.org
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: private-app
+            port: 80
+    targetGroup:
+      enabled: true
+      healthCheck:
+        path: /healthz
+        protocol: HTTP
+        port: traffic-port
+    referenceGrant:
+      enabled: true

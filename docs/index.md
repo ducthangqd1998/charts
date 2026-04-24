@@ -1,19 +1,17 @@
-# Thang Mai's Helm Charts Repository
+# Helm Charts Repository
 
-Welcome to the official Helm charts repository of Thang Mai!
+This site documents the Helm charts published from this repository.
 
----
+## Available Charts
 
-## 🚀 Helm Charts Available
-
+- [aws-alb-gateway](../charts/aws-alb-gateway)
+  - Manage Kubernetes Gateway API resources and AWS Load Balancer Controller Gateway resources on EKS.
 - [metrics-accumulator](../charts/metrics-accumulator)
-  - A production-ready Helm chart for [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator-clients), optimized for Lambda and ephemeral workloads.
+  - Deploy [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator) for collecting metrics from ephemeral workloads.
 
----
+## Usage
 
-## 📦 How to Use This Helm Repository
-
-Add this repo to your Helm client:
+Add the Helm repository:
 
 ```bash
 helm repo add thangmai-charts https://ducthangqd1998.github.io/charts
@@ -23,25 +21,16 @@ helm repo update
 Install a chart:
 
 ```bash
-helm install my-release thangmai-charts/metrics-accumulator
+helm install my-release thangmai-charts/<chart-name>
 ```
 
----
+## Documentation
 
-## 📚 Documentation
+- [aws-alb-gateway chart documentation](../charts/aws-alb-gateway/README.md)
+- [metrics-accumulator chart documentation](../charts/metrics-accumulator/README.md)
+- [Contributing guide](../CONTRIBUTING.md)
 
-- [metrics-accumulator Chart Documentation](../charts/metrics-accumulator/README.md)
-- [Contributing Guide](../CONTRIBUTING.md)
+## Links
 
----
-
-## 🛠️ About
-
-This repository is maintained by [Thang Mai](mailto:maiducthang.it@gmail.com).
-
-- [GitHub](https://github.com/ducthangqd1998/charts)
-- [Helm Hub](https://artifacthub.io/packages/search?repo=thangmai-charts)
-
----
-
-*Built with ❤️ for the Kubernetes and DevOps community.* 
+- [GitHub repository](https://github.com/ducthangqd1998/charts)
+- [Artifact Hub packages](https://artifacthub.io/packages/search?repo=thangmai-charts)

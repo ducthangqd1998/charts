@@ -1,0 +1,9 @@
+global:
+  gatewayClassName: alb
+  defaultTargetType: ip
+  labels: {}
+  annotations: {}
+
+gateways: {}
+
+routes: {}

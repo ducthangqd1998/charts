@@ -12,7 +12,7 @@ keywords:
   - accumulator
 home: https://github.com/ducthangqd1998/charts
 sources:
-  - https://github.com/bpoole6/metrics-accumulator-clients
+  - https://github.com/bpoole6/metrics-accumulator
   - https://github.com/ducthangqd1998/charts
 maintainers:
   - name: Thang Mai

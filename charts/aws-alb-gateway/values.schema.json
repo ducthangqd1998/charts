@@ -1,0 +1,176 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "global": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "gatewayClassName": { "type": "string", "minLength": 1, "default": "alb" },
+        "defaultTargetType": { "type": "string", "enum": ["ip", "instance"], "default": "ip" },
+        "labels": { "type": "object", "additionalProperties": { "type": "string" }, "default": {} },
+        "annotations": { "type": "object", "additionalProperties": { "type": "string" }, "default": {} }
+      }
+    },
+    "gateways": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["enabled"],
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "mode": { "type": "string", "enum": ["shared", "dedicated"] },
+          "name": { "type": "string", "minLength": 1 },
+          "namespace": { "type": "string", "minLength": 1 },
+          "gatewayClassName": { "type": "string", "minLength": 1 },
+          "sectionName": { "type": "string", "minLength": 1 },
+          "labels": { "type": "object" },
+          "annotations": { "type": "object" },
+          "listeners": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "protocol", "port"],
+              "properties": {
+                "name": { "type": "string", "minLength": 1 },
+                "protocol": { "type": "string", "enum": ["HTTP", "HTTPS"] },
+                "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+                "hostname": { "type": "string" },
+                "certificateArn": { "type": "string" },
+                "certificateRefs": { "type": "array" },
+                "tls": { "type": "object" },
+                "allowedRoutes": { "type": "object" }
+              }
+            }
+          },
+          "loadBalancer": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "name": { "type": "string" },
+              "loadBalancerName": { "type": "string" },
+              "scheme": { "type": "string", "enum": ["internet-facing", "internal"] },
+              "ipAddressType": { "type": "string", "enum": ["ipv4", "dualstack", "dualstack-without-public-ipv4"] },
+              "securityGroups": { "type": "array" },
+              "subnets": { "type": "array" },
+              "loadBalancerSubnets": { "type": "array" },
+              "loadBalancerSubnetsSelector": { "type": "object" },
+              "tags": { "type": "object" },
+              "wafV2": { "type": "object" },
+              "shield": { "type": "object" },
+              "loadBalancerAttributes": { "type": "array" },
+              "listenerConfigurations": { "type": "array" },
+              "minimumLoadBalancerCapacity": { "type": "object" },
+              "mergingMode": { "type": "string", "enum": ["prefer-gateway-class", "prefer-gateway"] }
+            }
+          },
+          "defaultTargetGroup": { "$ref": "#/definitions/targetGroup" }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+            "then": { "required": ["mode"] }
+          },
+          {
+            "if": { "properties": { "enabled": { "const": true }, "mode": { "const": "shared" } }, "required": ["enabled", "mode"] },
+            "then": { "required": ["name", "namespace"] }
+          },
+          {
+            "if": { "properties": { "enabled": { "const": true }, "mode": { "const": "dedicated" } }, "required": ["enabled", "mode"] },
+            "then": { "required": ["namespace", "listeners"] }
+          }
+        ]
+      }
+    },
+    "routes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["enabled"],
+        "properties": {
+          "enabled": { "type": "boolean" },
+          "gateway": { "type": "string", "minLength": 1 },
+          "namespace": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "hostnames": { "type": "array", "items": { "type": "string" } },
+          "parentRefs": { "type": "object" },
+          "rules": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["backendRefs"],
+              "properties": {
+                "matches": { "type": "array" },
+                "filters": { "type": "array" },
+                "backendRefs": { "type": "array", "minItems": 1 },
+                "timeouts": { "type": "object" }
+              },
+              "additionalProperties": true
+            }
+          },
+          "targetGroup": { "$ref": "#/definitions/targetGroup" },
+          "referenceGrant": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "enabled": { "type": "boolean", "default": false },
+              "name": { "type": "string" },
+              "gatewayName": { "type": "string" },
+              "annotations": { "type": "object" }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "enabled": { "const": true } }, "required": ["enabled"] },
+            "then": { "required": ["gateway", "namespace", "rules"] }
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "targetGroup": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "name": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["ip", "instance"] },
+        "targetGroupName": { "type": "string" },
+        "protocol": { "type": "string", "enum": ["HTTP", "HTTPS", "TCP", "TLS", "UDP", "TCP_UDP"] },
+        "protocolVersion": { "type": "string", "enum": ["HTTP1", "HTTP2", "GRPC"] },
+        "ipAddressType": { "type": "string", "enum": ["ipv4", "ipv6"] },
+        "enableMultiCluster": { "type": "boolean" },
+        "targetControlPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "targetGroupAttributes": { "type": "array" },
+        "tags": { "type": "object" },
+        "nodeSelector": { "type": "object" },
+        "targetReference": { "type": "object" },
+        "healthCheck": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "path": { "type": "string" },
+            "healthCheckPath": { "type": "string" },
+            "port": { "oneOf": [{ "type": "string" }, { "type": "integer" }] },
+            "healthCheckPort": { "oneOf": [{ "type": "string" }, { "type": "integer" }] },
+            "protocol": { "type": "string", "enum": ["HTTP", "HTTPS", "TCP"] },
+            "healthCheckProtocol": { "type": "string", "enum": ["HTTP", "HTTPS", "TCP"] },
+            "interval": { "type": "integer" },
+            "healthCheckInterval": { "type": "integer" },
+            "timeout": { "type": "integer" },
+            "healthCheckTimeout": { "type": "integer" },
+            "healthyThresholdCount": { "type": "integer" },
+            "unhealthyThresholdCount": { "type": "integer" },
+            "matcher": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}
