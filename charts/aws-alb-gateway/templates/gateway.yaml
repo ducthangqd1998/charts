@@ -1,0 +1,57 @@
+{{- include "aws-alb-gateway.validate" . -}}
+{{- range $key, $gateway := .Values.gateways }}
+{{- if and $gateway.enabled (eq $gateway.mode "dedicated") }}
+{{- $gatewayName := include "aws-alb-gateway.gatewayName" (dict "key" $key "gateway" $gateway) }}
+{{- $defaultTargetGroup := $gateway.defaultTargetGroup | default dict }}
+{{- $hasLbCfg := or $gateway.loadBalancer $defaultTargetGroup.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ $gatewayName }}
+  namespace: {{ required (printf "gateways.%s.namespace is required" $key) $gateway.namespace }}
+  labels:
+    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: gateway
+    aws-alb-gateway.io/gateway-key: {{ $key | quote }}
+    {{- with $gateway.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($gateway.annotations | default dict) }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ default $.Values.global.gatewayClassName $gateway.gatewayClassName | quote }}
+  {{- if $hasLbCfg }}
+  infrastructure:
+    parametersRef:
+      group: gateway.k8s.aws
+      kind: LoadBalancerConfiguration
+      name: {{ include "aws-alb-gateway.lbConfigName" (dict "key" $key "gateway" $gateway) }}
+  {{- end }}
+  listeners:
+    {{- range $idx, $listener := $gateway.listeners }}
+    - name: {{ required (printf "gateways.%s.listeners[%d].name is required" $key $idx) $listener.name | quote }}
+      protocol: {{ required (printf "gateways.%s.listeners[%d].protocol is required" $key $idx) $listener.protocol | quote }}
+      port: {{ required (printf "gateways.%s.listeners[%d].port is required" $key $idx) $listener.port }}
+      {{- with $listener.hostname }}
+      hostname: {{ . | quote }}
+      {{- end }}
+      {{- if or $listener.certificateRefs $listener.tls }}
+      tls:
+        {{- if $listener.tls }}
+        {{- toYaml $listener.tls | nindent 8 }}
+        {{- else if $listener.certificateRefs }}
+        certificateRefs:
+          {{- toYaml $listener.certificateRefs | nindent 10 }}
+        {{- end }}
+      {{- end }}
+      {{- with $listener.allowedRoutes }}
+      allowedRoutes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}

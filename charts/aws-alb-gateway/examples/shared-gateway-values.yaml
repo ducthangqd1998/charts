@@ -1,0 +1,66 @@
+global:
+  gatewayClassName: alb
+  defaultTargetType: ip
+  labels:
+    example.com/managed-by: helm
+
+gateways:
+  shared:
+    enabled: true
+    mode: shared
+    name: shared-gateway
+    namespace: gateway-system
+    sectionName: https
+
+routes:
+  example-app:
+    enabled: true
+    gateway: shared
+    namespace: example-app
+    name: example-app
+    hostnames:
+      - app.example.org
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: example-app
+            port: 80
+    targetGroup:
+      enabled: true
+      healthCheck:
+        path: /healthz
+        protocol: HTTP
+        port: traffic-port
+        matcher:
+          httpCode: "200"
+    referenceGrant:
+      enabled: true
+
+  example-api:
+    enabled: true
+    gateway: shared
+    namespace: example-api
+    name: example-api
+    hostnames:
+      - api.example.org
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: example-api
+            port: 8080
+    targetGroup:
+      enabled: true
+      healthCheck:
+        path: /ready
+        protocol: HTTP
+        port: traffic-port
+        matcher:
+          httpCode: "200"
+    referenceGrant:
+      enabled: true

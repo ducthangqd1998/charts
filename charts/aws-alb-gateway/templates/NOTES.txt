@@ -1,0 +1,7 @@
+aws-alb-gateway rendered successfully.
+
+Shared gateways only render routes and optional service TargetGroupConfigurations.
+Dedicated gateways render Gateway, LoadBalancerConfiguration, default TargetGroupConfiguration when enabled, routes, and optional service TargetGroupConfigurations.
+
+Verify resources:
+  kubectl get gateway,httproute,targetgroupconfiguration,loadbalancerconfiguration -A

@@ -1,0 +1,42 @@
+{{- range $key, $route := .Values.routes }}
+{{- $referenceGrant := $route.referenceGrant | default dict }}
+{{- if and $route.enabled $referenceGrant.enabled }}
+{{- $gatewayKey := required (printf "routes.%s.gateway is required" $key) $route.gateway }}
+{{- $gateway := index $.Values.gateways $gatewayKey }}
+{{- if ne $route.namespace $gateway.namespace }}
+{{- $routeName := include "aws-alb-gateway.routeName" (dict "key" $key "route" $route) }}
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: {{ default (printf "%s-allow-%s" $routeName $gatewayKey) $referenceGrant.name | trunc 63 | trimSuffix "-" }}
+  namespace: {{ required (printf "gateways.%s.namespace is required" $gatewayKey) $gateway.namespace }}
+  labels:
+    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: reference-grant
+    aws-alb-gateway.io/route-key: {{ $key | quote }}
+    aws-alb-gateway.io/gateway-key: {{ $gatewayKey | quote }}
+    {{- with $referenceGrant.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($referenceGrant.annotations | default dict) }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: {{ $route.namespace | quote }}
+  to:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      {{- with $referenceGrant.gatewayName }}
+      name: {{ . | quote }}
+      {{- else }}
+      name: {{ include "aws-alb-gateway.gatewayName" (dict "key" $gatewayKey "gateway" $gateway) | quote }}
+      {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

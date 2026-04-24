@@ -1,0 +1,63 @@
+{{- range $key, $gateway := .Values.gateways }}
+{{- $defaultTargetGroup := $gateway.defaultTargetGroup | default dict }}
+{{- if and $gateway.enabled (eq $gateway.mode "dedicated") $defaultTargetGroup.enabled }}
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: {{ include "aws-alb-gateway.defaultTgConfigName" (dict "key" $key "gateway" $gateway) }}
+  namespace: {{ required (printf "gateways.%s.namespace is required" $key) $gateway.namespace }}
+  labels:
+    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: default-target-group-configuration
+    aws-alb-gateway.io/gateway-key: {{ $key | quote }}
+    {{- with $defaultTargetGroup.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($defaultTargetGroup.annotations | default dict) }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  defaultConfiguration:
+    {{- include "aws-alb-gateway.targetGroupProps" (dict "root" $ "config" $defaultTargetGroup) | nindent 4 }}
+{{- end }}
+{{- end }}
+
+{{- range $key, $route := .Values.routes }}
+{{- $targetGroup := $route.targetGroup | default dict }}
+{{- if and $route.enabled $targetGroup.enabled }}
+{{- $routeName := include "aws-alb-gateway.routeName" (dict "key" $key "route" $route) }}
+{{- $backend := (first (first $route.rules).backendRefs) }}
+{{- $targetReference := $targetGroup.targetReference | default dict }}
+{{- $targetName := default $backend.name $targetReference.name }}
+---
+apiVersion: gateway.k8s.aws/v1beta1
+kind: TargetGroupConfiguration
+metadata:
+  name: {{ include "aws-alb-gateway.routeTgConfigName" (dict "key" $key "route" $route) }}
+  namespace: {{ required (printf "routes.%s.namespace is required" $key) $route.namespace }}
+  labels:
+    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: service-target-group-configuration
+    aws-alb-gateway.io/route-key: {{ $key | quote }}
+    {{- with $targetGroup.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($targetGroup.annotations | default dict) }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  targetReference:
+    {{- with $targetReference.group }}
+    group: {{ . | quote }}
+    {{- end }}
+    kind: {{ default "Service" $targetReference.kind | quote }}
+    name: {{ required (printf "routes.%s.targetGroup.targetReference.name or first backendRef.name is required" $key) $targetName | quote }}
+  defaultConfiguration:
+    {{- include "aws-alb-gateway.targetGroupProps" (dict "root" $ "config" $targetGroup) | nindent 4 }}
+{{- end }}
+{{- end }}

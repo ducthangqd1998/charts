@@ -1,0 +1,61 @@
+global:
+  gatewayClassName: alb
+  defaultTargetType: ip
+  labels:
+    example.com/environment: example
+
+gateways:
+  edge:
+    enabled: true
+    mode: dedicated
+    name: edge-gateway
+    namespace: gateway-system
+    sectionName: https
+    listeners:
+      - name: https
+        protocol: HTTPS
+        port: 443
+        hostname: app.example.org
+        certificateArn: arn:aws:acm:us-east-1:111122223333:certificate/replace-me
+        allowedRoutes:
+          namespaces:
+            from: Same
+    loadBalancer:
+      scheme: internet-facing
+      ipAddressType: ipv4
+      tags:
+        Environment: example
+        ManagedBy: helm
+      loadBalancerAttributes:
+        - key: deletion_protection.enabled
+          value: "true"
+    defaultTargetGroup:
+      enabled: true
+      targetType: ip
+      protocol: HTTP
+      protocolVersion: HTTP1
+      healthCheck:
+        path: /healthz
+        protocol: HTTP
+        port: traffic-port
+        matcher:
+          httpCode: "200"
+
+routes:
+  example-app:
+    enabled: true
+    gateway: edge
+    namespace: gateway-system
+    name: example-app
+    hostnames:
+      - app.example.org
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: example-app
+            port: 80
+    targetGroup:
+      enabled: false
