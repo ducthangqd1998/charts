@@ -1,5 +1,27 @@
 apiVersion: v1
 entries:
+  aws-alb-gateway:
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2026-04-24T11:35:28.776825+07:00"
+    description: Manage AWS Load Balancer Controller Gateway API resources for EKS.
+    digest: b7640304aaa30092483c21c0f001ec8856a0f41516db2af19ab35e38d4e54d0e
+    home: https://kubernetes-sigs.github.io/aws-load-balancer-controller/
+    keywords:
+    - aws
+    - eks
+    - alb
+    - gateway-api
+    - aws-load-balancer-controller
+    maintainers:
+    - name: platform-engineering
+    name: aws-alb-gateway
+    sources:
+    - https://github.com/kubernetes-sigs/aws-load-balancer-controller
+    type: application
+    urls:
+    - https://ducthangqd1998.github.io/charts/aws-alb-gateway-0.1.0.tgz
+    version: 0.1.0
   metrics-accumulator:
   - apiVersion: v2
     appVersion: latest
@@ -25,4 +47,4 @@ entries:
     urls:
     - https://ducthangqd1998.github.io/charts/metrics-accumulator-0.1.4.tgz
     version: 0.1.4
-generated: "2025-07-01T14:23:32.873189+07:00"
+generated: "2026-04-24T11:35:28.775979+07:00"
