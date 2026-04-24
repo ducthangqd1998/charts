@@ -1,6 +1,6 @@
-# Contributing to Thang Mai's Helm Charts
+# Contributing
 
-Thank you for your interest in contributing to this Helm charts collection! This document provides guidelines for contributing to the project.
+Thank you for your interest in contributing to this Helm chart repository. This document describes the expected development, documentation, and review standards.
 
 ## How to Contribute
 
@@ -8,7 +8,7 @@ Thank you for your interest in contributing to this Helm charts collection! This
 
 If you find a bug or have a suggestion for improvement:
 
-1. Check if the issue already exists in the [Issues](https://github.com/ducthangqd1998/charts/issues) section
+1. Check if the issue already exists in the [Issues](https://github.com/ducthangqd1998/charts/issues) section.
 2. If not, create a new issue with:
    - Clear title and description
    - Steps to reproduce (for bugs)
@@ -18,11 +18,11 @@ If you find a bug or have a suggestion for improvement:
 
 ### Suggesting New Charts
 
-If you have a tool that needs a Helm chart:
+If you have a tool or infrastructure component that needs a Helm chart:
 
 1. Open an issue with the "chart request" label
 2. Provide information about:
-   - The tool/application name and purpose
+   - The tool, application, or infrastructure resource name and purpose
    - Why it needs a Helm chart
    - Link to the original project
    - Any existing deployment methods
@@ -58,13 +58,13 @@ If you have a tool that needs a Helm chart:
 4. **Test Your Changes**
    ```bash
    # Lint the chart
-   helm lint ./your-chart
-   
+   helm lint ./charts/your-chart
+
    # Test templates
-   helm template test-release ./your-chart
-   
+   helm template test-release ./charts/your-chart
+
    # Test installation (if possible)
-   helm install test-release ./your-chart --dry-run
+   helm install test-release ./charts/your-chart --dry-run
    ```
 
 5. **Commit and Push**
@@ -85,24 +85,21 @@ All charts must follow these standards:
 
 ### Required Files
 
+At minimum, a chart should include:
+
+```text
+charts/chart-name/
+|-- Chart.yaml
+|-- values.yaml
+|-- README.md
+|-- templates/
+|   |-- _helpers.tpl
+|   `-- NOTES.txt
+`-- examples/
+    `-- example-values.yaml
 ```
-chart-name/
-├── Chart.yaml          # Chart metadata
-├── values.yaml         # Default values
-├── README.md           # Chart documentation
-├── .helmignore         # Helm ignore patterns
-├── templates/
-│   ├── _helpers.tpl    # Template helpers
-│   ├── deployment.yaml # Main deployment
-│   ├── service.yaml    # Service definition
-│   ├── serviceaccount.yaml
-│   ├── ingress.yaml    # Optional ingress
-│   ├── hpa.yaml        # Optional autoscaling
-│   └── NOTES.txt       # Post-install notes
-└── examples/
-    ├── production-values.yaml
-    └── development-values.yaml
-```
+
+Additional templates should match the chart type. Application charts commonly include `Deployment`, `Service`, `Ingress`, `ServiceAccount`, and autoscaling templates. Infrastructure charts may instead render CRDs or control-plane resources such as Gateway API resources.
 
 ### Chart.yaml Requirements
 
@@ -121,8 +118,7 @@ sources:
   - https://github.com/original-project/repo
   - https://github.com/ducthangqd1998/charts
 maintainers:
-  - name: Thang Mai
-    email: maiducthang.it@gmail.com
+  - name: maintainer-name
 ```
 
 ### values.yaml Standards
@@ -136,10 +132,10 @@ maintainers:
 ### Template Standards
 
 - Use `_helpers.tpl` for common template functions
-- Include resource limits/requests configuration
-- Support security contexts
-- Include liveness/readiness probes
-- Support ingress configuration
+- Include resource limits/requests configuration for workload charts
+- Support security contexts for workload charts
+- Include liveness/readiness probes for workload charts
+- Support ingress or Gateway API configuration when the chart exposes HTTP traffic
 - Use consistent labeling
 
 ### Required Labels
@@ -150,19 +146,24 @@ labels:
   helm.sh/chart: {{ include "chart.chart" . }}
   app.kubernetes.io/name: {{ include "chart.name" . }}
   app.kubernetes.io/instance: {{ .Release.Name }}
-  app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
   app.kubernetes.io/managed-by: {{ .Release.Service }}
 ```
+
+Workload charts should also include `app.kubernetes.io/version` when `appVersion` is meaningful for the deployed application.
 
 ### Documentation Requirements
 
 #### README.md Must Include:
 
-1. **Background**: Why this chart was created
-2. **Installation instructions**: Both from repo and source
-3. **Configuration table**: All values with descriptions
-4. **Usage examples**: How to use the deployed application
-5. **Troubleshooting**: Common issues and solutions
+1. Overview of what the chart manages.
+2. Prerequisites.
+3. Installation instructions from the Helm repository and from source.
+4. Configuration tables or documented values.
+5. Usage examples.
+6. Rendered resources or architecture notes when useful.
+7. Troubleshooting notes.
+
+Public examples should use generic domains, namespaces, service names, and labels. Do not publish organization-specific hostnames, account IDs, cluster names, or internal application names.
 
 #### NOTES.txt Must Include:
 
@@ -172,12 +173,13 @@ labels:
 
 ### Testing Requirements
 
-Every chart must include:
+Every chart should include:
 
 1. **Lint validation**: `helm lint` passes
-2. **Template validation**: `helm template` works
-3. **Installation test**: Can be installed with default values
-4. **Functional test**: Basic functionality verification
+2. **Template validation**: `helm template` works with default values and documented examples
+3. **Schema validation**: `values.schema.json` when practical for non-trivial charts
+4. **Installation test**: Can be installed with default values when the chart supports default installation
+5. **Functional test**: Basic functionality verification when practical
 
 ## Code Style
 
@@ -261,4 +263,4 @@ If you need help:
 - Help others learn and grow
 - Follow the project's standards and guidelines
 
-Thank you for contributing! 🚀 
+Thank you for contributing.

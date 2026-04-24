@@ -2,19 +2,17 @@
 
 ## Background
 
-I encountered significant challenges when trying to push metrics from AWS Lambda functions to Prometheus. Traditional tools like Prometheus Pushgateway don't provide adequate support for Lambda functions, particularly because Lambda metrics don't have TTL (Time To Live) capabilities, which can lead to stale metrics accumulating indefinitely.
+Ephemeral workloads can be difficult to monitor with tools that assume metrics should remain available until explicitly deleted. This can lead to stale metrics when short-lived jobs finish and no longer update their values.
 
-[Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) is an excellent tool that addresses these specific needs for ephemeral and short-lived jobs like Lambda functions. However, it lacks a Helm chart for easy deployment on Kubernetes clusters.
+[Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) addresses this use case for ephemeral and short-lived jobs. This chart packages Metrics Accumulator for deployment on Kubernetes with Helm.
 
-This repository provides a comprehensive Helm chart for Metrics Accumulator, making it simple to deploy and manage in Kubernetes environments.
-
-**Special thanks to [bpoole6](https://github.com/bpoole6) for creating the Metrics Accumulator project that solves the Lambda metrics collection challenge!** 🙏
+Special thanks to [bpoole6](https://github.com/bpoole6) for creating the Metrics Accumulator project.
 
 ## Introduction
 
 This chart deploys [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator) on a Kubernetes cluster using the [Helm](https://helm.sh) package manager.
 
-Metrics Accumulator is specifically designed as an alternative to Prometheus Pushgateway, optimized for Lambda functions and other ephemeral workloads.
+Metrics Accumulator is designed as an alternative to Prometheus Pushgateway for short-lived and ephemeral workloads.
 
 ## Prerequisites
 
@@ -35,7 +33,7 @@ Or install directly from source:
 ```bash
 git clone https://github.com/ducthangqd1998/charts.git
 cd charts
-helm install my-metrics-accumulator ./metrics-accumulator
+helm install my-metrics-accumulator ./charts/metrics-accumulator
 ```
 
 The command deploys metrics-accumulator on the Kubernetes cluster with the default configuration. The [Configuration](#configuration) section lists the parameters that can be configured during installation.
@@ -137,36 +135,36 @@ The following table lists the configurable parameters of the chart and their def
 
 ## Usage
 
-### Pushing Metrics from Lambda
+### Pushing Metrics
 
-To push metrics from your Lambda function to metrics-accumulator:
+To push metrics to metrics-accumulator:
 
 ```python
 import json
 import urllib3
 
-def lambda_handler(event, context):
-    # Your lambda logic here
-    
+def handler(event, context):
+    execution_time = 123
+
     # Push metrics to metrics-accumulator
     http = urllib3.PoolManager()
-    
+
     metric_data = {
-        "hostname": "lambda-host",
-        "endpoint": context.function_name,
+        "hostname": "example-host",
+        "endpoint": "example-job",
         "request_method": "POST",
         "status_code": 200,
         "pid": 1234,
         "value": execution_time
     }
-    
+
     response = http.request(
         'POST',
         'http://your-metrics-accumulator-url/api/v1/metrics',
         headers={'Content-Type': 'application/json'},
         body=json.dumps(metric_data)
     )
-    
+
     return {
         'statusCode': 200,
         'body': json.dumps('Success')
@@ -204,10 +202,10 @@ scrape_configs:
 | API | REST | REST + Enhanced |
 | Performance | Good | Optimized for ephemeral jobs |
 
-## Why Metrics Accumulator over Pushgateway for Lambda?
+## Why Metrics Accumulator over Pushgateway?
 
 1. **No TTL Issues**: Metrics Accumulator handles metric lifecycle better for ephemeral workloads
-2. **Lambda-Optimized**: Designed specifically for short-lived functions
+2. **Short-Lived Workload Support**: Designed for jobs that start, publish metrics, and exit
 3. **Better Resource Management**: More efficient handling of transient metrics
 4. **Enhanced API**: Provides additional endpoints for better observability
 
@@ -233,12 +231,12 @@ kubectl get svc metrics-accumulator
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+Please read [CONTRIBUTING.md](../../CONTRIBUTING.md) for details on the process for submitting pull requests.
 
 ## Acknowledgments
 
 - Thanks to [bpoole6](https://github.com/bpoole6) for the original [Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) project
-- Inspired by the need for better Lambda metrics collection in Kubernetes environments
+- Inspired by the need for better metrics collection from ephemeral workloads in Kubernetes environments
 
 ## License
 
@@ -246,4 +244,4 @@ This chart is distributed under the [Apache 2.0 License](https://www.apache.org/
 
 ## Repository
 
-This Helm chart is maintained at: https://github.com/ducthangqd1998/charts 
+This Helm chart is maintained at: https://github.com/ducthangqd1998/charts
