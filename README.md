@@ -1,118 +1,77 @@
-# Thang Mai's Helm Charts Collection
+# Helm Charts
 
-Welcome to my collection of Helm charts for tools and applications that don't have official Helm charts or need better Kubernetes integration.
-
-## About
-
-This repository contains Helm charts that I've created to fill gaps in the Kubernetes ecosystem. As a DevOps engineer, I often encounter excellent tools that lack proper Helm charts for easy Kubernetes deployment. This collection aims to bridge that gap.
+This repository contains community Helm charts for Kubernetes tooling and infrastructure components.
 
 ## Available Charts
 
-### [Metrics Accumulator](./metrics-accumulator)
+### [aws-alb-gateway](./charts/aws-alb-gateway)
 
-A Helm chart for [bpoole6/metrics-accumulator](https://github.com/bpoole6/metrics-accumulator) - an alternative to Prometheus Pushgateway specifically designed for Lambda functions and ephemeral workloads.
+A Helm chart for managing Kubernetes Gateway API resources and AWS Load Balancer Controller Gateway resources on EKS.
 
-**Why this chart was created:**
-- Prometheus Pushgateway doesn't handle Lambda metrics well (no TTL support)
-- Metrics Accumulator solves the Lambda metrics collection challenge
-- The original project lacked a Helm chart for Kubernetes deployment
+It can render:
 
-**Features:**
-- Production-ready configuration
-- ServiceMonitor support for Prometheus Operator
-- Comprehensive security options
-- Examples for both development and production environments
+- `Gateway`
+- `HTTPRoute`
+- `LoadBalancerConfiguration`
+- `TargetGroupConfiguration`
+- Optional `ReferenceGrant`
+
+### [metrics-accumulator](./charts/metrics-accumulator)
+
+A Helm chart for [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator), an alternative to Prometheus Pushgateway for ephemeral workloads.
+
+It includes:
+
+- Configurable deployment settings.
+- Service and ingress support.
+- Optional persistence.
+- Optional ServiceMonitor support for Prometheus Operator.
+- Security-related options such as NetworkPolicy and PodDisruptionBudget.
 
 ## Installation
 
-### Add Helm Repository
+Add the Helm repository:
 
 ```bash
 helm repo add thangmai-charts https://ducthangqd1998.github.io/charts
 helm repo update
 ```
 
-### Install a Chart
+Install a chart from the repository:
 
 ```bash
-# Install metrics-accumulator
-helm install my-metrics-accumulator thangmai-charts/metrics-accumulator
+helm install my-release thangmai-charts/<chart-name>
 ```
 
-### Install from Source
+Install a chart from source:
 
 ```bash
 git clone https://github.com/ducthangqd1998/charts.git
 cd charts
-helm install my-release ./chart-name
+helm install my-release ./charts/<chart-name>
 ```
 
-## Charts in Development
+## Documentation
 
-I'm working on Helm charts for other useful tools that lack proper Kubernetes integration:
-
-- **Monitoring Tools**: Additional observability solutions for specialized use cases
-- **Lambda Integration Tools**: More tools for connecting serverless workloads with Kubernetes
-- **Development Utilities**: Charts for development and testing environments
-
-## Why These Charts?
-
-As someone who works extensively with Kubernetes and Lambda functions, I've encountered several pain points:
-
-1. **Lambda Metrics Collection**: Traditional tools like Pushgateway aren't optimized for ephemeral workloads
-2. **Missing Helm Charts**: Many excellent tools lack official Helm charts
-3. **Production-Ready Configurations**: Need charts with comprehensive security and production features
-4. **Vietnamese DevOps Community**: Sharing knowledge and tools with the Vietnamese tech community
-
-## Contributing
-
-I welcome contributions, suggestions, and feedback! If you:
-
-- Find bugs in existing charts
-- Want to suggest new tools that need Helm charts
-- Have improvements for existing configurations
-- Want to contribute new charts
-
-Please feel free to:
-- Open an issue for discussions
-- Submit pull requests
-- Share your use cases and configurations
+- [aws-alb-gateway documentation](./charts/aws-alb-gateway/README.md)
+- [metrics-accumulator documentation](./charts/metrics-accumulator/README.md)
+- [Contributing guide](./CONTRIBUTING.md)
 
 ## Chart Standards
 
-All charts in this repository follow these standards:
+Charts in this repository should follow these standards:
 
-- ✅ **Production-ready**: Comprehensive security and configuration options
-- ✅ **Well-documented**: Clear README with examples and configuration tables
-- ✅ **Best Practices**: Following Helm and Kubernetes best practices
-- ✅ **Examples**: Development and production value examples
-- ✅ **Testing**: Validation scripts and testing procedures
+- Pass `helm lint`.
+- Render successfully with default values and documented examples.
+- Include clear default values.
+- Include a chart README with installation, configuration, examples, and troubleshooting notes.
+- Follow Kubernetes and Helm labeling conventions.
+- Avoid publishing environment-specific or organization-specific details in public examples.
 
-## Roadmap
+## Contributing
 
-- [ ] Add GitHub Actions for automated chart testing and publishing
-- [ ] Create more charts for Lambda integration tools
-- [ ] Add Grafana dashboards for monitoring the deployed applications
-- [ ] Vietnamese documentation for charts
-- [ ] Community feedback integration
-
-## Acknowledgments
-
-Special thanks to the open-source community and the original authors of the tools I'm creating charts for:
-
-- [bpoole6](https://github.com/bpoole6) for Metrics Accumulator
-- The Kubernetes and Helm communities for excellent tooling
-- The Vietnamese DevOps community for inspiration and feedback
-
-## Contact
-
-- **GitHub**: [@ducthangqd1998](https://github.com/ducthangqd1998)
-- **Repository**: [https://github.com/ducthangqd1998/charts](https://github.com/ducthangqd1998/charts)
+Contributions, bug reports, and chart requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for development and review guidelines.
 
 ## License
 
-All charts in this repository are licensed under the [Apache 2.0 License](LICENSE), same as the tools they deploy.
-
----
-
-*Building better Kubernetes deployments, one chart at a time.* 🚀 
+Charts in this repository are distributed under the [Apache 2.0 License](./LICENSE).
