@@ -102,14 +102,17 @@
             "minItems": 1,
             "items": {
               "type": "object",
-              "required": ["backendRefs"],
               "properties": {
                 "matches": { "type": "array" },
                 "filters": { "type": "array" },
                 "backendRefs": { "type": "array", "minItems": 1 },
                 "timeouts": { "type": "object" }
               },
-              "additionalProperties": true
+              "additionalProperties": true,
+              "anyOf": [
+                { "required": ["backendRefs"] },
+                { "required": ["filters"] }
+              ]
             }
           },
           "targetGroup": { "$ref": "#/definitions/targetGroup" },

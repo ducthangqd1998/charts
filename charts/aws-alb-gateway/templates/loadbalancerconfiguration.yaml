@@ -35,6 +35,9 @@ spec:
   securityGroups:
     {{- toYaml . | nindent 4 }}
   {{- end }}
+  {{- if hasKey $lb "manageBackendSecurityGroupRules" }}
+  manageBackendSecurityGroupRules: {{ $lb.manageBackendSecurityGroupRules }}
+  {{- end }}
   {{- $subnets := default $lb.loadBalancerSubnets $lb.subnets }}
   {{- with $subnets }}
   loadBalancerSubnets:

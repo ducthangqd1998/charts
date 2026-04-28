@@ -2,8 +2,8 @@ apiVersion: v2
 name: aws-alb-gateway
 description: Manage AWS Load Balancer Controller Gateway API resources for EKS.
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.1.1
+appVersion: "0.1.1"
 keywords:
   - aws
   - eks
