@@ -165,7 +165,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- $_ := required (printf "routes.%s.namespace is required" $key) $route.namespace -}}
 {{- if not $route.rules }}{{- fail (printf "routes.%s.rules is required" $key) -}}{{- end -}}
 {{- range $ruleIdx, $rule := $route.rules }}
-{{- if not $rule.backendRefs }}{{- fail (printf "routes.%s.rules[%d].backendRefs must contain at least one backendRef" $key $ruleIdx) -}}{{- end -}}
+{{- if and (not $rule.backendRefs) (not $rule.filters) }}{{- fail (printf "routes.%s.rules[%d] must contain backendRefs or filters" $key $ruleIdx) -}}{{- end -}}
 {{- end -}}
 {{- with $route.targetGroup }}
 {{- if and .enabled .targetType (not (has .targetType (list "ip" "instance"))) -}}
