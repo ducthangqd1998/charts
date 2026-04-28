@@ -1,0 +1,24 @@
+.codex
+
+# OS/editor local files
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Logs and temporary files
+*.log
+tmp/
+temp/
+.tmp/
+
+# Helm generated artifacts
+charts/*/charts/
+charts/*/Chart.lock
+charts/*/*.tgz
+
+# Local chart experiments. Matches any directory named exactly "test".
+test/
