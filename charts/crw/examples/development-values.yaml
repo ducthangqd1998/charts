@@ -1,0 +1,18 @@
+# Development values for crw
+# Lightweight configuration for local development / testing (e.g. Minikube, Kind, K3s).
+
+replicaCount: 1
+
+service:
+  type: NodePort
+  port: 3000
+
+search:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

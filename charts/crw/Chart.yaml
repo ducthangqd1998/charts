@@ -1,0 +1,29 @@
+apiVersion: v2
+name: crw
+description: High-performance, lightweight web scraping, crawling, and AI search API written in Rust (self-hosted Tavily and Firecrawl alternative)
+type: application
+version: 0.1.0
+appVersion: "0.42.1"
+keywords:
+  - crw
+  - fastcrw
+  - web-scraping
+  - crawler
+  - search
+  - tavily
+  - firecrawl
+  - ai-agents
+  - rag
+  - mcp
+home: https://github.com/ducthangqd1998/charts
+sources:
+  - https://github.com/fastcrw/crw
+  - https://github.com/ducthangqd1998/charts
+dependencies:
+  - name: searxng
+    version: "0.1.11"
+    repository: "https://techpipe-io.github.io/searxng-helm-chart/"
+    condition: searxng.enabled
+maintainers:
+  - name: Thang Mai
+    email: maiducthang.it@gmail.com

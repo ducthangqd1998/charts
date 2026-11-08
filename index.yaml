@@ -3,7 +3,7 @@ entries:
   aws-alb-gateway:
   - apiVersion: v2
     appVersion: 0.1.1
-    created: "2026-04-28T17:13:50.372525687+07:00"
+    created: "2026-11-08T11:44:29.078367+07:00"
     description: Manage AWS Load Balancer Controller Gateway API resources for EKS.
     digest: d86552d16eec5168ed99dd86a25ff33a72c84b5a2c06c7803750c7d1ca34bf8b
     home: https://kubernetes-sigs.github.io/aws-load-balancer-controller/
@@ -43,6 +43,41 @@ entries:
     urls:
     - https://ducthangqd1998.github.io/charts/aws-alb-gateway-0.1.0.tgz
     version: 0.1.0
+  crw:
+  - apiVersion: v2
+    appVersion: 0.42.1
+    created: "2026-11-08T11:44:29.079488+07:00"
+    dependencies:
+    - condition: searxng.enabled
+      name: searxng
+      repository: https://techpipe-io.github.io/searxng-helm-chart/
+      version: 0.1.11
+    description: High-performance, lightweight web scraping, crawling, and AI search
+      API written in Rust (self-hosted Tavily and Firecrawl alternative)
+    digest: 199a89e3c9121fa6aa9863dfe336360701b592d6c66ff7ca0ec792ace7256f5d
+    home: https://github.com/ducthangqd1998/charts
+    keywords:
+    - crw
+    - fastcrw
+    - web-scraping
+    - crawler
+    - search
+    - tavily
+    - firecrawl
+    - ai-agents
+    - rag
+    - mcp
+    maintainers:
+    - email: maiducthang.it@gmail.com
+      name: Thang Mai
+    name: crw
+    sources:
+    - https://github.com/fastcrw/crw
+    - https://github.com/ducthangqd1998/charts
+    type: application
+    urls:
+    - https://ducthangqd1998.github.io/charts/crw-0.1.0.tgz
+    version: 0.1.0
   metrics-accumulator:
   - apiVersion: v2
     appVersion: latest
@@ -70,7 +105,7 @@ entries:
     version: 0.1.4
   - apiVersion: v2
     appVersion: latest
-    created: "2026-04-28T17:13:50.373205851+07:00"
+    created: "2026-11-08T11:44:29.080136+07:00"
     description: A Helm chart for metrics-accumulator - an alternative to Prometheus
       Pushgateway for Lambda functions
     digest: 151a7ea254a6e292aad6c9f97745e88314e9bd9aa495050ff827b8d64d394a87
@@ -92,4 +127,4 @@ entries:
     urls:
     - https://ducthangqd1998.github.io/charts/metrics-accumulator-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-28T17:13:50.37196406+07:00"
+generated: "2026-11-08T11:44:29.077406+07:00"

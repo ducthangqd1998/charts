@@ -28,6 +28,18 @@ It includes:
 - Optional ServiceMonitor support for Prometheus Operator.
 - Security-related options such as NetworkPolicy and PodDisruptionBudget.
 
+### [crw](./charts/crw)
+
+A Helm chart for [FastCRW](https://github.com/fastcrw/crw) — an ultra-fast, lightweight web scraping, crawling, and AI search API written in Rust (self-hosted Tavily and Firecrawl alternative).
+
+It includes:
+
+- FastCRW Rust-based scraping, crawling, and AI search API (`/v1/search`, `/v1/scrape`, `/v1/crawl`).
+- Flexible search backend integration (pluggable with [SearXNG](https://github.com/searxng/searxng) via `search.backendUrl`).
+- Native Model Context Protocol (MCP) server support for AI coding assistants (Claude Code, Cursor).
+- Vendor-neutral Kubernetes Ingress and Gateway API `HTTPRoute` support.
+- Hardened non-root Pod Security Standards (Restricted profile, read-only rootfs).
+
 ## Installation
 
 Add the Helm repository:

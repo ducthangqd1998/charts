@@ -8,6 +8,8 @@ This site documents the Helm charts published from this repository.
   - Manage Kubernetes Gateway API resources and AWS Load Balancer Controller Gateway resources on EKS.
 - [metrics-accumulator](../charts/metrics-accumulator)
   - Deploy [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator) for collecting metrics from ephemeral workloads.
+- [crw](../charts/crw)
+  - Deploy FastCRW as a self-hosted Tavily/Firecrawl alternative AI search & web scraping API.
 
 ## Usage
 

@@ -1,0 +1,9 @@
+# External SearXNG configuration for crw
+# Disables bundled SearXNG subchart and points to an existing SearXNG service.
+
+searxng:
+  enabled: false
+
+search:
+  enabled: true
+  backendUrl: "http://searxng.default.svc.cluster.local:8080"
