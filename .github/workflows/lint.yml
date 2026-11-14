@@ -1,0 +1,179 @@
+name: Lint and Test Charts
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Lint, Render & Audit Charts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: python3 -m pip install --quiet pyyaml
+
+      - name: Set up Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.17.1
+
+      - name: Validate YAML syntax and unique keys
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib
+          import sys
+          import yaml
+
+          class UniqueKeyLoader(yaml.SafeLoader):
+              pass
+
+          def construct_mapping(loader, node, deep=False):
+              mapping = {}
+              for key_node, value_node in node.value:
+                  key = loader.construct_object(key_node, deep=deep)
+                  if key in mapping:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          f"duplicate YAML key: {key!r}",
+                          key_node.start_mark,
+                      )
+                  mapping[key] = loader.construct_object(value_node, deep=deep)
+              return mapping
+
+          UniqueKeyLoader.add_constructor(
+              yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+              construct_mapping,
+          )
+
+          root = pathlib.Path(".")
+          checked = 0
+          for path in sorted(list(root.rglob("*.yaml")) + list(root.rglob("*.yml"))):
+              parts = path.parts
+              if ".git" in parts or "templates" in parts:
+                  continue
+              if "home-server" in path.name or path.name.endswith(".local.yaml"):
+                  continue
+              with path.open("r", encoding="utf-8") as fh:
+                  list(yaml.load_all(fh, Loader=UniqueKeyLoader))
+              checked += 1
+          print(f"Validated {checked} static YAML files with zero duplicate keys.")
+          PY
+
+      - name: Run Helm lint and template checks
+        run: |
+          set -euo pipefail
+          render_dir="$(mktemp -d)"
+          pkg_dir="$(mktemp -d)"
+          trap 'rm -rf "$render_dir" "$pkg_dir"' EXIT
+
+          for chart in charts/*; do
+            [ -d "$chart" ] || continue
+            chart_name="$(basename "$chart")"
+            echo "=== Linting $chart_name (default values) ==="
+            helm lint "$chart"
+            helm template "ci-${chart_name}" "$chart" > "${render_dir}/${chart_name}-default.yaml"
+
+            if [ -d "${chart}/examples" ]; then
+              for values_file in "${chart}/examples"/*.yaml; do
+                [ -e "$values_file" ] || continue
+                base_name="$(basename "$values_file")"
+                case "$base_name" in
+                  *home-server*|*.local.yaml)
+                    continue
+                    ;;
+                esac
+                echo "=== Linting $chart_name ($base_name) ==="
+                helm lint "$chart" -f "$values_file"
+                helm template "ci-${chart_name}" "$chart" -f "$values_file" > "${render_dir}/${chart_name}-${base_name}"
+              done
+            fi
+
+            echo "=== Packaging hygiene check for $chart_name ==="
+            helm package "$chart" --destination "$pkg_dir"
+          done
+
+          for archive in "$pkg_dir"/*.tgz; do
+            if tar -ztf "$archive" | grep -E '(^|/)(test|tests|scripts)(/|$)|home-server|\.local\.yaml$'; then
+              echo "ERROR: Forbidden local/test file packaged in $archive" >&2
+              exit 1
+            fi
+          done
+
+          RENDER_DIR="$render_dir" python3 - <<'PY'
+          import os
+          import pathlib
+          import sys
+          import yaml
+
+          class UniqueKeyLoader(yaml.SafeLoader):
+              pass
+
+          def construct_mapping(loader, node, deep=False):
+              mapping = {}
+              for key_node, value_node in node.value:
+                  key = loader.construct_object(key_node, deep=deep)
+                  if key in mapping:
+                      raise yaml.constructor.ConstructorError(
+                          "while constructing a mapping",
+                          node.start_mark,
+                          f"duplicate YAML key: {key!r}",
+                          key_node.start_mark,
+                      )
+                  mapping[key] = loader.construct_object(value_node, deep=deep)
+              return mapping
+
+          UniqueKeyLoader.add_constructor(
+              yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+              construct_mapping,
+          )
+
+          deprecated_apis = {
+              "extensions/v1beta1",
+              "networking.k8s.io/v1beta1",
+              "policy/v1beta1",
+              "autoscaling/v2beta1",
+              "autoscaling/v2beta2",
+              "rbac.authorization.k8s.io/v1beta1",
+              "batch/v1beta1",
+          }
+
+          render_dir = pathlib.Path(os.environ["RENDER_DIR"])
+          for manifest in sorted(render_dir.glob("*.yaml")):
+              with manifest.open("r", encoding="utf-8") as fh:
+                  docs = list(yaml.load_all(fh, Loader=UniqueKeyLoader))
+              for doc in docs:
+                  if not isinstance(doc, dict):
+                      continue
+                  api_version = doc.get("apiVersion", "")
+                  if api_version in deprecated_apis:
+                      kind = doc.get("kind", "Unknown")
+                      print(
+                          f"ERROR: Deprecated apiVersion '{api_version}' for {kind} in {manifest.name}",
+                          file=sys.stderr,
+                      )
+                      sys.exit(1)
+          print("All rendered manifests passed unique-key and deprecated-API checks.")
+          PY

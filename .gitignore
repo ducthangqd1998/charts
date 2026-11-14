@@ -15,10 +15,18 @@ tmp/
 temp/
 .tmp/
 
-# Helm generated artifacts
-charts/*/charts/
-charts/*/Chart.lock
+# Helm release & chart-releaser artifacts
+/*.tgz
 charts/*/*.tgz
+.cr-release-packages/
+.cr-index/
 
-# Local chart experiments. Matches any directory named exactly "test".
+# Keep vendored subchart dependencies tracked in git
+!charts/*/Chart.lock
+!charts/*/charts/
+!charts/*/charts/*.tgz
+
+# Local/private environment overrides and experiments
+*home-server*.yaml
+*.local.yaml
 test/
