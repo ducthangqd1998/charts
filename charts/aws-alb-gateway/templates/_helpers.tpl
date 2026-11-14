@@ -23,18 +23,23 @@ Common helpers for aws-alb-gateway.
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "aws-alb-gateway.labels" -}}
+{{- define "aws-alb-gateway.baseLabels" -}}
 helm.sh/chart: {{ include "aws-alb-gateway.chart" . }}
 app.kubernetes.io/name: {{ include "aws-alb-gateway.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- with .Values.global.labels }}
-{{ toYaml . }}
-{{- end }}
+{{- end -}}
+
+{{- define "aws-alb-gateway.labels" -}}
+{{- $global := .Values.global | default dict -}}
+{{- $base := include "aws-alb-gateway.baseLabels" . | fromYaml -}}
+{{- $merged := mergeOverwrite (dict) ($global.labels | default dict) $base -}}
+{{ toYaml $merged }}
 {{- end -}}
 
 {{- define "aws-alb-gateway.annotations" -}}
-{{- with .Values.global.annotations }}
+{{- $global := .Values.global | default dict -}}
+{{- with $global.annotations }}
 {{ toYaml . }}
 {{- end }}
 {{- end -}}
@@ -46,36 +51,39 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 {{- define "aws-alb-gateway.gatewayName" -}}
 {{- $key := .key -}}
-{{- $gateway := .gateway -}}
+{{- $gateway := .gateway | default dict -}}
 {{- default $key $gateway.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "aws-alb-gateway.lbConfigName" -}}
-{{- $gateway := .gateway -}}
+{{- $gateway := .gateway | default dict -}}
+{{- $lb := $gateway.loadBalancer | default dict -}}
 {{- $gatewayName := include "aws-alb-gateway.gatewayName" . -}}
-{{- default (printf "%s-lbcfg" $gatewayName) $gateway.loadBalancer.name | trunc 63 | trimSuffix "-" -}}
+{{- default (printf "%s-lbcfg" $gatewayName) $lb.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "aws-alb-gateway.defaultTgConfigName" -}}
-{{- $gateway := .gateway -}}
+{{- $gateway := .gateway | default dict -}}
+{{- $defaultTg := $gateway.defaultTargetGroup | default dict -}}
 {{- $gatewayName := include "aws-alb-gateway.gatewayName" . -}}
-{{- default (printf "%s-default-tgc" $gatewayName) $gateway.defaultTargetGroup.name | trunc 63 | trimSuffix "-" -}}
+{{- default (printf "%s-default-tgc" $gatewayName) $defaultTg.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "aws-alb-gateway.routeName" -}}
-{{- $route := .route -}}
+{{- $route := .route | default dict -}}
 {{- default .key $route.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "aws-alb-gateway.routeTgConfigName" -}}
-{{- $route := .route -}}
+{{- $route := .route | default dict -}}
+{{- $tg := $route.targetGroup | default dict -}}
 {{- $routeName := include "aws-alb-gateway.routeName" . -}}
-{{- default (printf "%s-tgc" $routeName) $route.targetGroup.name | trunc 63 | trimSuffix "-" -}}
+{{- default (printf "%s-tgc" $routeName) $tg.name | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{- define "aws-alb-gateway.targetType" -}}
-{{- $local := .local -}}
-{{- $global := .global -}}
+{{- $local := .local | default dict -}}
+{{- $global := .global | default dict -}}
 {{- default (default "ip" $global.defaultTargetType) $local.targetType -}}
 {{- end -}}
 
@@ -102,10 +110,11 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end -}}
 
 {{- define "aws-alb-gateway.targetGroupProps" -}}
-{{- $cfg := .config -}}
+{{- $cfg := .config | default dict -}}
 {{- $root := .root -}}
+{{- $global := $root.Values.global | default dict -}}
 {{- $props := dict -}}
-{{- $_ := set $props "targetType" (include "aws-alb-gateway.targetType" (dict "local" $cfg "global" $root.Values.global)) -}}
+{{- $_ := set $props "targetType" (include "aws-alb-gateway.targetType" (dict "local" $cfg "global" $global)) -}}
 {{- with $cfg.targetGroupName }}{{- $_ := set $props "targetGroupName" . -}}{{- end -}}
 {{- with $cfg.ipAddressType }}{{- $_ := set $props "ipAddressType" . -}}{{- end -}}
 {{- with $cfg.protocol }}{{- $_ := set $props "protocol" . -}}{{- end -}}
@@ -124,7 +133,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 {{- define "aws-alb-gateway.validate" -}}
 {{- $root := . -}}
-{{- $defaultTargetType := default "ip" .Values.global.defaultTargetType -}}
+{{- $global := .Values.global | default dict -}}
+{{- $defaultTargetType := default "ip" $global.defaultTargetType -}}
 {{- if not (has $defaultTargetType (list "ip" "instance")) -}}
 {{- fail "global.defaultTargetType must be one of: ip, instance" -}}
 {{- end -}}
@@ -157,7 +167,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- range $key, $route := .Values.routes }}
 {{- if $route.enabled }}
 {{- $gatewayKey := required (printf "routes.%s.gateway is required" $key) $route.gateway -}}
-{{- if not (hasKey $root.Values.gateways $gatewayKey) -}}
+{{- if not (hasKey ($root.Values.gateways | default dict) $gatewayKey) -}}
 {{- fail (printf "routes.%s.gateway references undefined gateway key %q" $key $gatewayKey) -}}
 {{- end -}}
 {{- $gateway := index $root.Values.gateways $gatewayKey -}}

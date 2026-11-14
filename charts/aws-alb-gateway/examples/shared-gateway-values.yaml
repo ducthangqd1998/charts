@@ -13,6 +13,8 @@ gateways:
     sectionName: https
 
 routes:
+  # Same-namespace HTTPRoute -> Service (cross-namespace Gateway attachment is
+  # authorized by allowedRoutes on the shared Gateway).
   example-app:
     enabled: true
     gateway: shared
@@ -36,13 +38,13 @@ routes:
         port: traffic-port
         matcher:
           httpCode: "200"
-    referenceGrant:
-      enabled: true
 
+  # Cross-namespace HTTPRoute (in gateway-system) -> Service (in example-api).
+  # Enabling referenceGrant renders a ReferenceGrant in namespace example-api.
   example-api:
     enabled: true
     gateway: shared
-    namespace: example-api
+    namespace: gateway-system
     name: example-api
     hostnames:
       - api.example.org
@@ -53,6 +55,7 @@ routes:
               value: /
         backendRefs:
           - name: example-api
+            namespace: example-api
             port: 8080
     targetGroup:
       enabled: true

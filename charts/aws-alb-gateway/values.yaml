@@ -1,9 +1,15 @@
+nameOverride: ""
+fullnameOverride: ""
+
 global:
   gatewayClassName: alb
   defaultTargetType: ip
   labels: {}
   annotations: {}
 
+# Map of Gateway definitions (mode: shared or dedicated).
 gateways: {}
 
+# Map of HTTPRoute definitions, optional TargetGroupConfiguration, and optional
+# cross-namespace HTTPRoute -> Service ReferenceGrant resources.
 routes: {}

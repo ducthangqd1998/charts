@@ -74,6 +74,9 @@ gateways:
         port: traffic-port
 
 routes:
+  # Cross-namespace Gateway attachment is controlled via allowedRoutes on the
+  # Gateway listeners above; ReferenceGrant is only needed when HTTPRoute and
+  # backend Service live in different namespaces.
   public-app:
     enabled: true
     gateway: public
@@ -96,7 +99,7 @@ routes:
         protocol: HTTP
         port: traffic-port
     referenceGrant:
-      enabled: true
+      enabled: false
 
   private-app:
     enabled: true
@@ -120,4 +123,4 @@ routes:
         protocol: HTTP
         port: traffic-port
     referenceGrant:
-      enabled: true
+      enabled: false

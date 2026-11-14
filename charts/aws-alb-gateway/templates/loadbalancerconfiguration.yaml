@@ -1,8 +1,12 @@
+{{- $global := .Values.global | default dict -}}
 {{- range $key, $gateway := .Values.gateways }}
 {{- $defaultTargetGroup := $gateway.defaultTargetGroup | default dict }}
 {{- if and $gateway.enabled (eq $gateway.mode "dedicated") (or $gateway.loadBalancer $defaultTargetGroup.enabled) }}
-{{- $gatewayName := include "aws-alb-gateway.gatewayName" (dict "key" $key "gateway" $gateway) }}
 {{- $lb := $gateway.loadBalancer | default dict }}
+{{- $baseLabels := include "aws-alb-gateway.baseLabels" $ | fromYaml }}
+{{- $componentLabels := dict "app.kubernetes.io/component" "load-balancer-configuration" "aws-alb-gateway.io/gateway-key" (toString $key) }}
+{{- $labels := mergeOverwrite (dict) ($global.labels | default dict) $baseLabels $componentLabels ($lb.labels | default dict) }}
+{{- $annotations := mergeOverwrite (dict) ($global.annotations | default dict) ($lb.annotations | default dict) }}
 ---
 apiVersion: gateway.k8s.aws/v1beta1
 kind: LoadBalancerConfiguration
@@ -10,13 +14,7 @@ metadata:
   name: {{ include "aws-alb-gateway.lbConfigName" (dict "key" $key "gateway" $gateway) }}
   namespace: {{ required (printf "gateways.%s.namespace is required" $key) $gateway.namespace }}
   labels:
-    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
-    app.kubernetes.io/component: load-balancer-configuration
-    aws-alb-gateway.io/gateway-key: {{ $key | quote }}
-    {{- with $lb.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($lb.annotations | default dict) }}
+    {{- toYaml $labels | nindent 4 }}
   {{- if $annotations }}
   annotations:
     {{- toYaml $annotations | nindent 4 }}
@@ -45,8 +43,7 @@ spec:
     {{- if kindIs "string" . }}
     - identifier: {{ . | quote }}
     {{- else }}
-    -
-      {{- toYaml . | nindent 6 }}
+    {{- toYaml (list .) | nindent 4 }}
     {{- end }}
     {{- end }}
   {{- end }}

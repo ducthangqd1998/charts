@@ -1,42 +1,91 @@
+{{- $global := .Values.global | default dict -}}
 {{- range $key, $route := .Values.routes }}
 {{- $referenceGrant := $route.referenceGrant | default dict }}
 {{- if and $route.enabled $referenceGrant.enabled }}
 {{- $gatewayKey := required (printf "routes.%s.gateway is required" $key) $route.gateway }}
-{{- $gateway := index $.Values.gateways $gatewayKey }}
-{{- if ne $route.namespace $gateway.namespace }}
 {{- $routeName := include "aws-alb-gateway.routeName" (dict "key" $key "route" $route) }}
+{{- $apiVersion := default "gateway.networking.k8s.io/v1beta1" $referenceGrant.apiVersion }}
+{{- $baseLabels := include "aws-alb-gateway.baseLabels" $ | fromYaml }}
+{{- $componentLabels := dict "app.kubernetes.io/component" "reference-grant" "aws-alb-gateway.io/route-key" (toString $key) "aws-alb-gateway.io/gateway-key" (toString $gatewayKey) }}
+{{- $labels := mergeOverwrite (dict) ($global.labels | default dict) $baseLabels $componentLabels ($referenceGrant.labels | default dict) }}
+{{- $annotations := mergeOverwrite (dict) ($global.annotations | default dict) ($referenceGrant.annotations | default dict) }}
+{{- $defaultFrom := list (dict "group" "gateway.networking.k8s.io" "kind" "HTTPRoute" "namespace" (toString $route.namespace)) }}
+{{- $from := default $defaultFrom $referenceGrant.from }}
+{{- if $referenceGrant.namespace }}
+{{- $defaultToEntry := dict "group" "" "kind" "Service" }}
+{{- with $referenceGrant.serviceName }}
+{{- $_ := set $defaultToEntry "name" (toString .) }}
+{{- end }}
+{{- $to := default (list $defaultToEntry) $referenceGrant.to }}
 ---
-apiVersion: gateway.networking.k8s.io/v1beta1
+apiVersion: {{ $apiVersion }}
 kind: ReferenceGrant
 metadata:
-  name: {{ default (printf "%s-allow-%s" $routeName $gatewayKey) $referenceGrant.name | trunc 63 | trimSuffix "-" }}
-  namespace: {{ required (printf "gateways.%s.namespace is required" $gatewayKey) $gateway.namespace }}
+  name: {{ default (printf "%s-allow-%s" $routeName $route.namespace) $referenceGrant.name | trunc 63 | trimSuffix "-" }}
+  namespace: {{ $referenceGrant.namespace }}
   labels:
-    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
-    app.kubernetes.io/component: reference-grant
-    aws-alb-gateway.io/route-key: {{ $key | quote }}
-    aws-alb-gateway.io/gateway-key: {{ $gatewayKey | quote }}
-    {{- with $referenceGrant.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($referenceGrant.annotations | default dict) }}
+    {{- toYaml $labels | nindent 4 }}
   {{- if $annotations }}
   annotations:
     {{- toYaml $annotations | nindent 4 }}
   {{- end }}
 spec:
   from:
-    - group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      namespace: {{ $route.namespace | quote }}
+    {{- toYaml $from | nindent 4 }}
   to:
-    - group: gateway.networking.k8s.io
-      kind: Gateway
-      {{- with $referenceGrant.gatewayName }}
-      name: {{ . | quote }}
-      {{- else }}
-      name: {{ include "aws-alb-gateway.gatewayName" (dict "key" $gatewayKey "gateway" $gateway) | quote }}
-      {{- end }}
+    {{- toYaml $to | nindent 4 }}
+{{- else }}
+{{- $byNamespace := dict }}
+{{- range $rule := $route.rules }}
+{{- range $backend := ($rule.backendRefs | default list) }}
+{{- if and $backend.namespace (ne (toString $backend.namespace) (toString $route.namespace)) }}
+{{- $targetNs := toString $backend.namespace }}
+{{- $entry := dict "group" (default "" $backend.group) "kind" (default "Service" $backend.kind) }}
+{{- with $backend.name }}
+{{- $_ := set $entry "name" (toString .) }}
+{{- end }}
+{{- $existing := index $byNamespace $targetNs | default list }}
+{{- $alreadyAdded := false }}
+{{- range $item := $existing }}
+{{- if and (eq $item.group $entry.group) (eq $item.kind $entry.kind) (eq (default "" $item.name) (default "" $entry.name)) }}
+{{- $alreadyAdded = true }}
+{{- end }}
+{{- end }}
+{{- if not $alreadyAdded }}
+{{- $_ := set $byNamespace $targetNs (append $existing $entry) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- $targetNamespaces := keys $byNamespace | sortAlpha }}
+{{- range $targetNs := $targetNamespaces }}
+{{- $grantName := printf "%s-allow-%s" $routeName $route.namespace }}
+{{- if $referenceGrant.name }}
+{{- if gt (len $targetNamespaces) 1 }}
+{{- $grantName = printf "%s-%s" $referenceGrant.name $targetNs }}
+{{- else }}
+{{- $grantName = $referenceGrant.name }}
+{{- end }}
+{{- end }}
+{{- $to := default (index $byNamespace $targetNs) $referenceGrant.to }}
+---
+apiVersion: {{ $apiVersion }}
+kind: ReferenceGrant
+metadata:
+  name: {{ $grantName | trunc 63 | trimSuffix "-" }}
+  namespace: {{ $targetNs }}
+  labels:
+    {{- toYaml $labels | nindent 4 }}
+  {{- if $annotations }}
+  annotations:
+    {{- toYaml $annotations | nindent 4 }}
+  {{- end }}
+spec:
+  from:
+    {{- toYaml $from | nindent 4 }}
+  to:
+    {{- toYaml $to | nindent 4 }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -2,8 +2,8 @@ apiVersion: v2
 name: aws-alb-gateway
 description: Manage AWS Load Balancer Controller Gateway API resources for EKS.
 type: application
-version: 0.1.1
-appVersion: "0.1.1"
+version: 0.1.2
+appVersion: "0.1.2"
 keywords:
   - aws
   - eks
@@ -13,5 +13,7 @@ keywords:
 home: https://kubernetes-sigs.github.io/aws-load-balancer-controller/
 sources:
   - https://github.com/kubernetes-sigs/aws-load-balancer-controller
+  - https://github.com/ducthangqd1998/charts
 maintainers:
-  - name: platform-engineering
+  - name: Thang Mai
+    email: maiducthang.it@gmail.com

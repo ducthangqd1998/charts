@@ -1,3 +1,4 @@
+{{- $global := .Values.global | default dict -}}
 {{- range $key, $route := .Values.routes }}
 {{- if $route.enabled }}
 {{- $routeName := include "aws-alb-gateway.routeName" (dict "key" $key "route" $route) }}
@@ -5,6 +6,10 @@
 {{- $gateway := index $.Values.gateways $gatewayKey }}
 {{- $gatewayName := include "aws-alb-gateway.gatewayName" (dict "key" $gatewayKey "gateway" $gateway) }}
 {{- $parentRefs := $route.parentRefs | default dict }}
+{{- $baseLabels := include "aws-alb-gateway.baseLabels" $ | fromYaml }}
+{{- $componentLabels := dict "app.kubernetes.io/component" "http-route" "aws-alb-gateway.io/route-key" (toString $key) "aws-alb-gateway.io/gateway-key" (toString $gatewayKey) }}
+{{- $labels := mergeOverwrite (dict) ($global.labels | default dict) $baseLabels $componentLabels ($route.labels | default dict) }}
+{{- $annotations := mergeOverwrite (dict) ($global.annotations | default dict) ($route.annotations | default dict) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -12,14 +17,7 @@ metadata:
   name: {{ $routeName }}
   namespace: {{ required (printf "routes.%s.namespace is required" $key) $route.namespace }}
   labels:
-    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
-    app.kubernetes.io/component: http-route
-    aws-alb-gateway.io/route-key: {{ $key | quote }}
-    aws-alb-gateway.io/gateway-key: {{ $gatewayKey | quote }}
-    {{- with $route.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($route.annotations | default dict) }}
+    {{- toYaml $labels | nindent 4 }}
   {{- if $annotations }}
   annotations:
     {{- toYaml $annotations | nindent 4 }}

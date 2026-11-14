@@ -1,9 +1,14 @@
 {{- include "aws-alb-gateway.validate" . -}}
+{{- $global := .Values.global | default dict -}}
 {{- range $key, $gateway := .Values.gateways }}
 {{- if and $gateway.enabled (eq $gateway.mode "dedicated") }}
 {{- $gatewayName := include "aws-alb-gateway.gatewayName" (dict "key" $key "gateway" $gateway) }}
 {{- $defaultTargetGroup := $gateway.defaultTargetGroup | default dict }}
 {{- $hasLbCfg := or $gateway.loadBalancer $defaultTargetGroup.enabled }}
+{{- $baseLabels := include "aws-alb-gateway.baseLabels" $ | fromYaml }}
+{{- $componentLabels := dict "app.kubernetes.io/component" "gateway" "aws-alb-gateway.io/gateway-key" (toString $key) }}
+{{- $labels := mergeOverwrite (dict) ($global.labels | default dict) $baseLabels $componentLabels ($gateway.labels | default dict) }}
+{{- $annotations := mergeOverwrite (dict) ($global.annotations | default dict) ($gateway.annotations | default dict) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -11,19 +16,13 @@ metadata:
   name: {{ $gatewayName }}
   namespace: {{ required (printf "gateways.%s.namespace is required" $key) $gateway.namespace }}
   labels:
-    {{- include "aws-alb-gateway.labels" $ | nindent 4 }}
-    app.kubernetes.io/component: gateway
-    aws-alb-gateway.io/gateway-key: {{ $key | quote }}
-    {{- with $gateway.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
-  {{- $annotations := merge (dict) ($.Values.global.annotations | default dict) ($gateway.annotations | default dict) }}
+    {{- toYaml $labels | nindent 4 }}
   {{- if $annotations }}
   annotations:
     {{- toYaml $annotations | nindent 4 }}
   {{- end }}
 spec:
-  gatewayClassName: {{ default $.Values.global.gatewayClassName $gateway.gatewayClassName | quote }}
+  gatewayClassName: {{ default (default "alb" $global.gatewayClassName) $gateway.gatewayClassName | quote }}
   {{- if $hasLbCfg }}
   infrastructure:
     parametersRef:

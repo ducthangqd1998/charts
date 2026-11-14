@@ -3,6 +3,8 @@
   "type": "object",
   "additionalProperties": true,
   "properties": {
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" },
     "global": {
       "type": "object",
       "additionalProperties": false,
@@ -26,8 +28,8 @@
           "namespace": { "type": "string", "minLength": 1 },
           "gatewayClassName": { "type": "string", "minLength": 1 },
           "sectionName": { "type": "string", "minLength": 1 },
-          "labels": { "type": "object" },
-          "annotations": { "type": "object" },
+          "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+          "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
           "listeners": {
             "type": "array",
             "items": {
@@ -50,10 +52,13 @@
             "additionalProperties": true,
             "properties": {
               "name": { "type": "string" },
+              "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+              "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
               "loadBalancerName": { "type": "string" },
               "scheme": { "type": "string", "enum": ["internet-facing", "internal"] },
               "ipAddressType": { "type": "string", "enum": ["ipv4", "dualstack", "dualstack-without-public-ipv4"] },
               "securityGroups": { "type": "array" },
+              "manageBackendSecurityGroupRules": { "type": "boolean" },
               "subnets": { "type": "array" },
               "loadBalancerSubnets": { "type": "array" },
               "loadBalancerSubnetsSelector": { "type": "object" },
@@ -95,14 +100,24 @@
           "gateway": { "type": "string", "minLength": 1 },
           "namespace": { "type": "string", "minLength": 1 },
           "name": { "type": "string", "minLength": 1 },
+          "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+          "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
           "hostnames": { "type": "array", "items": { "type": "string" } },
-          "parentRefs": { "type": "object" },
+          "parentRefs": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "sectionName": { "type": "string" },
+              "refs": { "type": "array", "items": { "type": "object" } }
+            }
+          },
           "rules": {
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
               "properties": {
+                "name": { "type": "string" },
                 "matches": { "type": "array" },
                 "filters": { "type": "array" },
                 "backendRefs": { "type": "array", "minItems": 1 },
@@ -121,9 +136,14 @@
             "additionalProperties": true,
             "properties": {
               "enabled": { "type": "boolean", "default": false },
+              "apiVersion": { "type": "string", "default": "gateway.networking.k8s.io/v1beta1" },
               "name": { "type": "string" },
-              "gatewayName": { "type": "string" },
-              "annotations": { "type": "object" }
+              "namespace": { "type": "string" },
+              "serviceName": { "type": "string" },
+              "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+              "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
+              "from": { "type": "array", "items": { "type": "object" } },
+              "to": { "type": "array", "items": { "type": "object" } }
             }
           }
         },
@@ -143,6 +163,8 @@
       "properties": {
         "enabled": { "type": "boolean", "default": false },
         "name": { "type": "string" },
+        "labels": { "type": "object", "additionalProperties": { "type": "string" } },
+        "annotations": { "type": "object", "additionalProperties": { "type": "string" } },
         "targetType": { "type": "string", "enum": ["ip", "instance"] },
         "targetGroupName": { "type": "string" },
         "protocol": { "type": "string", "enum": ["HTTP", "HTTPS", "TCP", "TLS", "UDP", "TCP_UDP"] },
@@ -153,7 +175,16 @@
         "targetGroupAttributes": { "type": "array" },
         "tags": { "type": "object" },
         "nodeSelector": { "type": "object" },
-        "targetReference": { "type": "object" },
+        "targetReference": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "group": { "type": "string" },
+            "kind": { "type": "string" },
+            "name": { "type": "string" },
+            "namespace": { "type": "string" }
+          }
+        },
         "healthCheck": {
           "type": "object",
           "additionalProperties": true,
