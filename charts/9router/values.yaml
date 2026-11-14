@@ -1,0 +1,226 @@
+# Default values for 9router.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Number of replicas (ignored when autoscaling.enabled is true).
+# Keep replicaCount: 1 when persistence.enabled is true with ReadWriteOnce.
+replicaCount: 1
+
+image:
+  repository: decolua/9router
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Additional labels added to all Kubernetes resources rendered by this chart.
+commonLabels: {}
+
+# Upstream decolua/9router entrypoint invokes su-exec (requiring root).
+# Bypassing it with ["node", "custom-server.js"] allows running as non-root
+# under Pod Security Standards (Restricted).
+command:
+  - node
+  - custom-server.js
+args: []
+
+# Deployment update strategy.
+# When omitted and persistence.enabled is true with ReadWriteOnce, the chart
+# automatically selects Recreate to avoid Multi-Attach volume deadlocks.
+strategy: {}
+#   type: RollingUpdate
+#   rollingUpdate:
+#     maxSurge: 1
+#     maxUnavailable: 0
+
+serviceAccount:
+  # Specifies whether a service account should be created.
+  create: true
+  # Automatically mount a ServiceAccount's API credentials.
+  automount: false
+  # Annotations to add to the service account.
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template.
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 20128
+  targetPort: 20128
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: 9router.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+    # - secretName: 9router-tls
+    #   hosts:
+    #     - 9router.example.com
+
+# Gateway API HTTPRoute (gateway.networking.k8s.io/v1)
+# Requires Gateway API CRDs to be installed in the cluster.
+httpRoute:
+  enabled: false
+  annotations: {}
+  parentRefs: []
+    # - name: my-gateway
+    #   namespace: gateway-system
+    #   sectionName: https
+  hostnames: []
+    # - 9router.example.com
+  # Optional custom HTTPRoute rules. Each item supports:
+  #   name, matches, filters, timeouts, backendRefs (defaults to this chart's Service).
+  rules: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+startupProbe:
+  enabled: true
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 18
+
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /api/health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+# Graceful shutdown hooks allowing in-flight requests to drain cleanly.
+lifecycle:
+  preStop:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - sleep 10
+
+terminationGracePeriodSeconds: 60
+
+# Persistent storage for SQLite/state under DATA_DIR.
+# Disabled by default so the chart deploys cleanly on any cluster using emptyDir.
+# Enable for production single-instance persistence.
+persistence:
+  enabled: false
+  # storageClass: "" uses the cluster default StorageClass. Set "-" to disable dynamic provisioning.
+  storageClass: ""
+  existingClaim: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  annotations: {}
+  mountPath: /app/data
+
+# Plain environment variables injected into the container.
+env:
+  DATA_DIR: /app/data
+  HOSTNAME: "0.0.0.0"
+  NODE_ENV: production
+  PORT: "20128"
+
+# Additional env entries (supports valueFrom / secretKeyRef / fieldRef).
+extraEnv: []
+
+# Inject environment variables from existing ConfigMaps or Secrets.
+extraEnvFrom: []
+# - secretRef:
+#     name: 9router-secrets
+
+# Additional volumes and volumeMounts for custom configuration or CA bundles.
+extraVolumes: []
+extraVolumeMounts: []
+
+# Horizontal Pod Autoscaler (autoscaling/v2).
+# Mutually exclusive with persistence.enabled when using ReadWriteOnce storage
+# or when KEDA ScaledObject targets the same Deployment.
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 25
+          periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+
+# PodDisruptionBudget (policy/v1). Specify only minAvailable or maxUnavailable.
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  maxUnavailable: null
+
+# Default-deny ingress/egress NetworkPolicy scoped to the application port,
+# DNS (UDP/TCP 53), and outbound HTTP/HTTPS API calls to upstream LLM providers.
+networkPolicy:
+  enabled: false
+  allowPrometheus: false
+  prometheusNamespaceSelector: {}
+  ingressFrom: []
+  egressTo: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+topologySpreadConstraints: []

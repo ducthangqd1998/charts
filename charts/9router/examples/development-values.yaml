@@ -1,0 +1,17 @@
+# Example development values for 9router (ephemeral emptyDir storage)
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+persistence:
+  enabled: false
+
+extraEnvFrom:
+  - secretRef:
+      name: 9router-secrets
+      optional: true

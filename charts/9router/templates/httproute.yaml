@@ -1,0 +1,47 @@
+{{- if .Values.httpRoute.enabled -}}
+{{- if not .Values.httpRoute.parentRefs -}}
+{{- fail "httpRoute.parentRefs must be specified when httpRoute.enabled is true" -}}
+{{- end -}}
+{{- $fullName := include "9router.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "9router.labels" . | nindent 4 }}
+  {{- with .Values.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- toYaml .Values.httpRoute.parentRefs | nindent 4 }}
+  {{- with .Values.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- if .Values.httpRoute.rules }}
+    {{- $rules := list }}
+    {{- range .Values.httpRoute.rules }}
+    {{- $rule := deepCopy . }}
+    {{- if not $rule.backendRefs }}
+    {{- $_ := set $rule "backendRefs" (list (dict "group" "" "kind" "Service" "name" $fullName "port" $svcPort "weight" 1)) }}
+    {{- end }}
+    {{- $rules = append $rules $rule }}
+    {{- end }}
+    {{- toYaml $rules | nindent 4 }}
+    {{- else }}
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: {{ $fullName }}
+          port: {{ $svcPort }}
+          weight: 1
+    {{- end }}
+{{- end }}

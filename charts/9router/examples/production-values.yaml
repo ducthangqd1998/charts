@@ -1,0 +1,56 @@
+# Example production HA values for 9router (Ingress + HPA + PDB + NetworkPolicy)
+# Note: Horizontal autoscaling is intended for stateless or ReadWriteMany setups.
+# For single-node ReadWriteOnce persistence, see examples/gateway-api-values.yaml.
+replicaCount: 2
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: 9router.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: 9router-tls
+      hosts:
+        - 9router.example.com
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+networkPolicy:
+  enabled: true
+  allowPrometheus: true
+  prometheusNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: monitoring
+
+extraEnvFrom:
+  - secretRef:
+      name: 9router-secrets
+
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: 9router

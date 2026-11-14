@@ -1,0 +1,35 @@
+# Example values exposing persistent 9router via Kubernetes Gateway API (HTTPRoute)
+replicaCount: 1
+
+persistence:
+  enabled: true
+  size: 10Gi
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+httpRoute:
+  enabled: true
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: public-gateway
+      namespace: gateway-system
+      sectionName: https
+  hostnames:
+    - 9router.example.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      timeouts:
+        request: 300s
+
+extraEnvFrom:
+  - secretRef:
+      name: 9router-secrets
