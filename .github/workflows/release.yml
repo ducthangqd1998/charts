@@ -38,6 +38,24 @@ jobs:
         with:
           version: v3.17.1
 
+      - name: Register chart dependency repositories
+        run: |
+          python3 - <<'PY'
+          import glob, subprocess, yaml
+          repos = set()
+          for path in glob.glob("charts/*/Chart.yaml"):
+              with open(path, "r", encoding="utf-8") as fh:
+                  chart = yaml.safe_load(fh) or {}
+              for dep in chart.get("dependencies") or []:
+                  repo = (dep.get("repository") or "").strip()
+                  if repo.startswith(("http://", "https://")):
+                      repos.add(repo)
+          for idx, url in enumerate(sorted(repos)):
+              subprocess.run(["helm", "repo", "add", f"dep-{idx}", url], check=True)
+          if repos:
+              subprocess.run(["helm", "repo", "update"], check=True)
+          PY
+
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
         with:
