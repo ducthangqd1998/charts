@@ -3,6 +3,7 @@
 # negation (prefixed with !). Only one pattern per line.
 .DS_Store
 # Common VCS dirs
+.git*
 .git/
 .gitignore
 .bzr/
@@ -22,10 +23,15 @@
 *.tmproj
 .vscode/
 # OS generated files
-.DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+# Local test fixtures, scripts, and private override values
+test/
+tests/
+scripts/
+*home-server*
+*.local.yaml

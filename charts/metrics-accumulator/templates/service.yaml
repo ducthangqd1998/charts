@@ -1,12 +1,11 @@
+{{- $baseLabels := include "metrics-accumulator.labels" . | fromYaml -}}
+{{- $labels := mergeOverwrite (dict) $baseLabels (.Values.service.labels | default dict) -}}
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "metrics-accumulator.fullname" . }}
   labels:
-    {{- include "metrics-accumulator.labels" . | nindent 4 }}
-    {{- with .Values.service.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    {{- toYaml $labels | nindent 4 }}
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -19,4 +18,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    {{- include "metrics-accumulator.selectorLabels" . | nindent 4 }} 
+    {{- include "metrics-accumulator.selectorLabels" . | nindent 4 }}

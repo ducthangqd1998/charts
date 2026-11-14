@@ -31,9 +31,17 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
+Selector labels
+*/}}
+{{- define "metrics-accumulator.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "metrics-accumulator.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Common labels
 */}}
-{{- define "metrics-accumulator.labels" -}}
+{{- define "metrics-accumulator.baseLabels" -}}
 helm.sh/chart: {{ include "metrics-accumulator.chart" . }}
 {{ include "metrics-accumulator.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
@@ -42,12 +50,10 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
-{{/*
-Selector labels
-*/}}
-{{- define "metrics-accumulator.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "metrics-accumulator.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+{{- define "metrics-accumulator.labels" -}}
+{{- $base := include "metrics-accumulator.baseLabels" . | fromYaml -}}
+{{- $merged := mergeOverwrite (dict) (.Values.commonLabels | default dict) $base -}}
+{{ toYaml $merged }}
 {{- end }}
 
 {{/*
@@ -70,6 +76,15 @@ Create the image name
 {{- end }}
 
 {{/*
+Return "true" when .Values.config contains non-whitespace content
+*/}}
+{{- define "metrics-accumulator.hasConfig" -}}
+{{- if ne (trim (.Values.config | default "")) "" -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Create service monitor labels
 */}}
 {{- define "metrics-accumulator.serviceMonitorLabels" -}}
@@ -85,4 +100,4 @@ Create service monitor annotations
 {{- if .Values.serviceMonitor.annotations }}
 {{- toYaml .Values.serviceMonitor.annotations }}
 {{- end }}
-{{- end }} 
+{{- end }}

@@ -4,19 +4,13 @@
 
 Ephemeral workloads can be difficult to monitor with tools that assume metrics should remain available until explicitly deleted. This can lead to stale metrics when short-lived jobs finish and no longer update their values.
 
-[Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) addresses this use case for ephemeral and short-lived jobs. This chart packages Metrics Accumulator for deployment on Kubernetes with Helm.
+[Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) addresses this use case for ephemeral and short-lived jobs (AWS Lambda, Cloud Run, Kubernetes Jobs, CronJobs). This chart packages Metrics Accumulator for deployment on Kubernetes with Helm.
 
 Special thanks to [bpoole6](https://github.com/bpoole6) for creating the Metrics Accumulator project.
 
-## Introduction
-
-This chart deploys [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator) on a Kubernetes cluster using the [Helm](https://helm.sh) package manager.
-
-Metrics Accumulator is designed as an alternative to Prometheus Pushgateway for short-lived and ephemeral workloads.
-
 ## Prerequisites
 
-- Kubernetes 1.16+
+- Kubernetes 1.19+
 - Helm 3.0+
 
 ## Installing the Chart
@@ -25,6 +19,7 @@ To install the chart with the release name `my-metrics-accumulator`:
 
 ```bash
 helm repo add thangmai-charts https://ducthangqd1998.github.io/charts
+helm repo update
 helm install my-metrics-accumulator thangmai-charts/metrics-accumulator
 ```
 
@@ -36,212 +31,149 @@ cd charts
 helm install my-metrics-accumulator ./charts/metrics-accumulator
 ```
 
-The command deploys metrics-accumulator on the Kubernetes cluster with the default configuration. The [Configuration](#configuration) section lists the parameters that can be configured during installation.
-
-> **Tip**: List all releases using `helm list`
-
 ## Uninstalling the Chart
-
-To uninstall/delete the `my-metrics-accumulator` deployment:
 
 ```bash
 helm uninstall my-metrics-accumulator
 ```
 
-The command removes all the Kubernetes components associated with the chart and deletes the release.
-
 ## Configuration
-
-The following table lists the configurable parameters of the chart and their default values.
 
 ### Basic Configuration
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `replicaCount` | Number of replicas | `1` |
+| `replicaCount` | Number of replicas (ignored when `autoscaling.enabled: true`) | `1` |
 | `image.repository` | Image repository | `bpoole6/metrics-accumulator` |
-| `image.tag` | Image tag | `""` (uses appVersion) |
+| `image.tag` | Image tag (defaults to `Chart.appVersion`) | `""` (`2.0.1`) |
 | `image.pullPolicy` | Image pull policy | `IfNotPresent` |
 | `nameOverride` | Override chart name | `""` |
 | `fullnameOverride` | Override chart fullname | `""` |
+| `commonLabels` | Labels applied to all rendered resources | `{}` |
 
-### Service Account
+### ServiceAccount & Security (PSS Restricted)
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `serviceAccount.create` | Create service account | `true` |
+| `serviceAccount.automount` | Automount ServiceAccount token | `false` |
 | `serviceAccount.annotations` | Service account annotations | `{}` |
 | `serviceAccount.name` | Service account name | `""` |
+| `podSecurityContext` | Pod security context (`runAsNonRoot: true`, UID `10001`, `seccompProfile: RuntimeDefault`) | Restricted defaults |
+| `securityContext` | Container security context (`readOnlyRootFilesystem: true`, `allowPrivilegeEscalation: false`, `capabilities.drop: [ALL]`) | Restricted defaults |
 
-### Service
+### Service & Ingress
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `service.type` | Service type | `ClusterIP` |
 | `service.port` | Service port | `8080` |
-| `service.targetPort` | Target port | `8080` |
+| `service.targetPort` | Container port | `8080` |
 | `service.annotations` | Service annotations | `{}` |
-
-### Ingress
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `ingress.enabled` | Enable ingress | `false` |
-| `ingress.className` | Ingress class name | `""` |
+| `ingress.enabled` | Enable `networking.k8s.io/v1` Ingress | `false` |
+| `ingress.className` | IngressClass name | `""` |
 | `ingress.annotations` | Ingress annotations | `{}` |
-| `ingress.hosts` | Ingress hosts | `[{host: "metrics-accumulator.local", paths: [{path: "/", pathType: "Prefix"}]}]` |
-| `ingress.tls` | TLS configuration | `[]` |
+| `ingress.hosts` | Ingress host rules | See `values.yaml` |
+| `ingress.tls` | Ingress TLS configuration | `[]` |
 
-### Resources
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `resources` | CPU/Memory requests and limits | `{}` |
-
-### Autoscaling
+### Resources, Lifecycle & Probes
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `autoscaling.enabled` | Enable autoscaling | `false` |
-| `autoscaling.minReplicas` | Minimum replicas | `1` |
+| `resources.requests` | CPU and memory requests | `cpu: 100m, memory: 256Mi` |
+| `resources.limits` | Memory limit | `memory: 512Mi` |
+| `startupProbe` | HTTP GET probe on `/service-discovery` (`port: http`) | Enabled |
+| `livenessProbe` | HTTP GET probe on `/service-discovery` (`port: http`) | Enabled |
+| `readinessProbe` | HTTP GET probe on `/service-discovery` (`port: http`) | Enabled |
+| `lifecycle` | Container lifecycle hooks | `preStop: sleep 10` |
+| `terminationGracePeriodSeconds` | Pod termination grace period | `60` |
+
+### Autoscaling, Persistence & Observability
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `autoscaling.enabled` | Enable `autoscaling/v2` HorizontalPodAutoscaler | `false` |
+| `autoscaling.minReplicas` | Minimum replicas | `2` |
 | `autoscaling.maxReplicas` | Maximum replicas | `10` |
 | `autoscaling.targetCPUUtilizationPercentage` | Target CPU utilization | `80` |
-
-### Persistence
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `persistence.enabled` | Enable persistent storage | `false` |
+| `persistence.enabled` | Enable PVC storage (`ReadWriteOnce` requires single replica or `ReadWriteMany` StorageClass) | `false` |
 | `persistence.accessMode` | PVC access mode | `ReadWriteOnce` |
 | `persistence.size` | Storage size | `1Gi` |
-| `persistence.storageClass` | Storage class | `""` |
-| `persistence.mountPath` | Mount path | `/data` |
-
-### ServiceMonitor (Prometheus Operator)
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
-| `serviceMonitor.enabled` | Create ServiceMonitor | `false` |
+| `persistence.mountPath` | Container mount path | `/data` |
+| `serviceMonitor.enabled` | Create Prometheus Operator `ServiceMonitor` | `false` |
 | `serviceMonitor.interval` | Scrape interval | `30s` |
 | `serviceMonitor.scrapeTimeout` | Scrape timeout | `10s` |
-| `serviceMonitor.path` | Metrics path | `/metrics` |
-
-### Security
-
-| Parameter | Description | Default |
-|-----------|-------------|---------|
+| `serviceMonitor.path` | Metrics scrape path (`/metrics/{metricGroup}`) | `/metrics/default` |
+| `serviceMonitor.honorLabels` | Preserve pushed metric labels on scrape | `true` |
 | `networkPolicy.enabled` | Enable NetworkPolicy | `false` |
-| `podDisruptionBudget.enabled` | Enable PodDisruptionBudget | `false` |
+| `podDisruptionBudget.enabled` | Enable PodDisruptionBudget (`minAvailable: 1` default) | `false` |
+| `config` | Raw YAML configuration mounted at `/etc/metrics-accumulator/metrics-accumulator.yml` | `""` |
+
+### Secure Configuration & API Keys
+
+> **Security Warning:** Never commit plaintext `apiKey` secrets inside `values.yaml` (`config`).
+> For production deployments, store your `metrics-accumulator.yml` containing `apiKey` values in a Kubernetes `Secret` (managed by External Secrets Operator, Vault, or SealedSecrets), mount it via `volumes` + `volumeMounts`, and pass `--config-file=/etc/metrics-accumulator-secret/metrics-accumulator.yml` in `extraArgs` (or inject environment variables via `extraEnv` / `extraEnvFrom`).
+
+When `config` is non-empty, the chart automatically:
+1. Renders a `ConfigMap` (`<fullname>-config`).
+2. Mounts it read-only at `/etc/metrics-accumulator/metrics-accumulator.yml`.
+3. Passes `--config-file=/etc/metrics-accumulator/metrics-accumulator.yml` to container `args`.
+4. Annotates Pod templates with `checksum/config` so config updates trigger a rolling restart.
 
 ## Usage
 
-### Pushing Metrics
+### Pushing Metrics (`/update/{metricGroup}`)
 
-To push metrics to metrics-accumulator:
-
-```python
-import json
-import urllib3
-
-def handler(event, context):
-    execution_time = 123
-
-    # Push metrics to metrics-accumulator
-    http = urllib3.PoolManager()
-
-    metric_data = {
-        "hostname": "example-host",
-        "endpoint": "example-job",
-        "request_method": "POST",
-        "status_code": 200,
-        "pid": 1234,
-        "value": execution_time
-    }
-
-    response = http.request(
-        'POST',
-        'http://your-metrics-accumulator-url/api/v1/metrics',
-        headers={'Content-Type': 'application/json'},
-        body=json.dumps(metric_data)
-    )
-
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Success')
-    }
-```
-
-### Viewing Metrics
-
-To view accumulated metrics in Prometheus format:
+Metrics Accumulator accepts Prometheus text exposition payloads via `POST /update/{metricGroup}` authenticated with the `X-API-KEY` header:
 
 ```bash
-curl http://your-metrics-accumulator-url/metrics
+curl -X POST "http://metrics-accumulator:8080/update/default" \
+  -H "X-API-KEY: <your-metric-group-api-key>" \
+  -H "Content-Type: text/plain" \
+  --data-binary $'# TYPE lambda_invocations_total counter\nlambda_invocations_total{function="billing"} 1.0\n'
 ```
 
-### Configuring Prometheus
+### Viewing Metrics (`/metrics/{metricGroup}`)
 
-Add the following job to your Prometheus configuration:
+```bash
+curl "http://metrics-accumulator:8080/metrics/default"
+```
+
+### Configuring Prometheus (`/service-discovery` or Static Scrape)
+
+Metrics Accumulator exposes a native Prometheus HTTP Service Discovery endpoint at `/service-discovery`:
 
 ```yaml
 scrape_configs:
   - job_name: 'metrics-accumulator'
-    static_configs:
-      - targets: ['metrics-accumulator.default.svc.cluster.local:8080']
-    metrics_path: '/metrics'
     honor_labels: true
+    http_sd_configs:
+      - url: 'http://metrics-accumulator.default.svc.cluster.local:8080/service-discovery'
 ```
 
-## Comparison with Pushgateway
+Or scrape a specific metric group directly:
 
-| Feature | Pushgateway | Metrics Accumulator |
-|---------|-------------|-------------------|
-| Lambda Support | Limited | Optimized |
-| Short-lived Jobs | Basic | Advanced |
-| TTL Support | Manual | Built-in |
-| API | REST | REST + Enhanced |
-| Performance | Good | Optimized for ephemeral jobs |
-
-## Why Metrics Accumulator over Pushgateway?
-
-1. **No TTL Issues**: Metrics Accumulator handles metric lifecycle better for ephemeral workloads
-2. **Short-Lived Workload Support**: Designed for jobs that start, publish metrics, and exit
-3. **Better Resource Management**: More efficient handling of transient metrics
-4. **Enhanced API**: Provides additional endpoints for better observability
+```yaml
+scrape_configs:
+  - job_name: 'metrics-accumulator-default'
+    metrics_path: '/metrics/default'
+    honor_labels: true
+    static_configs:
+      - targets: ['metrics-accumulator.default.svc.cluster.local:8080']
+```
 
 ## Troubleshooting
 
-### Check Pod Status
-
 ```bash
 kubectl get pods -l app.kubernetes.io/name=metrics-accumulator
-```
-
-### View Logs
-
-```bash
 kubectl logs -l app.kubernetes.io/name=metrics-accumulator
-```
-
-### Check Service
-
-```bash
-kubectl get svc metrics-accumulator
+kubectl get svc -l app.kubernetes.io/name=metrics-accumulator
 ```
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](../../CONTRIBUTING.md) for details on the process for submitting pull requests.
-
-## Acknowledgments
-
-- Thanks to [bpoole6](https://github.com/bpoole6) for the original [Metrics Accumulator](https://github.com/bpoole6/metrics-accumulator) project
-- Inspired by the need for better metrics collection from ephemeral workloads in Kubernetes environments
+Please read [CONTRIBUTING.md](../../CONTRIBUTING.md) for details on submitting pull requests.
 
 ## License
 
-This chart is distributed under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0).
-
-## Repository
-
-This Helm chart is maintained at: https://github.com/ducthangqd1998/charts
+This chart is distributed under the [Apache 2.0 License](../../LICENSE).

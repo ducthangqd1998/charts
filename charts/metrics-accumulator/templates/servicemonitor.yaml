@@ -1,4 +1,6 @@
 {{- if .Values.serviceMonitor.enabled }}
+{{- $baseLabels := include "metrics-accumulator.labels" . | fromYaml -}}
+{{- $labels := mergeOverwrite (dict) $baseLabels (.Values.serviceMonitor.labels | default dict) -}}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -9,24 +11,28 @@ metadata:
   namespace: {{ .Release.Namespace }}
   {{- end }}
   labels:
-    {{- include "metrics-accumulator.labels" . | nindent 4 }}
-    {{- include "metrics-accumulator.serviceMonitorLabels" . | nindent 4 }}
-  {{- with (include "metrics-accumulator.serviceMonitorAnnotations" .) }}
+    {{- toYaml $labels | nindent 4 }}
+  {{- with .Values.serviceMonitor.annotations }}
   annotations:
-    {{- . | nindent 4 }}
+    {{- toYaml . | nindent 4 }}
   {{- end }}
 spec:
   endpoints:
-  - interval: {{ .Values.serviceMonitor.interval }}
-    path: {{ .Values.serviceMonitor.path }}
-    port: http
-    {{- if .Values.serviceMonitor.scrapeTimeout }}
-    scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
-    {{- end }}
+    - interval: {{ .Values.serviceMonitor.interval }}
+      path: {{ .Values.serviceMonitor.path | default "/metrics/default" }}
+      port: http
+      {{- if hasKey .Values.serviceMonitor "honorLabels" }}
+      honorLabels: {{ .Values.serviceMonitor.honorLabels }}
+      {{- else }}
+      honorLabels: true
+      {{- end }}
+      {{- if .Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      {{- end }}
   namespaceSelector:
     matchNames:
-    - {{ .Release.Namespace }}
+      - {{ .Release.Namespace }}
   selector:
     matchLabels:
       {{- include "metrics-accumulator.selectorLabels" . | nindent 6 }}
-{{- end }} 
+{{- end }}

@@ -1,20 +1,19 @@
 # Production values for metrics-accumulator
-# This file provides a production-ready configuration
+# High-availability, Pod Security Standards (Restricted), ServiceMonitor, and NetworkPolicy.
 
 replicaCount: 3
 
 image:
   repository: bpoole6/metrics-accumulator
-  tag: "latest"
+  tag: "2.0.1"
   pullPolicy: IfNotPresent
 
 resources:
-  limits:
-    cpu: 500m
-    memory: 512Mi
   requests:
     cpu: 250m
     memory: 256Mi
+  limits:
+    memory: 512Mi
 
 autoscaling:
   enabled: true
@@ -23,8 +22,12 @@ autoscaling:
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
+# Persistence is disabled in multi-replica HA mode because ReadWriteOnce PVCs
+# cannot be mounted across multiple nodes simultaneously (Multi-Attach error).
+# If single-instance persistence is required, set replicaCount: 1, autoscaling.enabled: false,
+# or use a ReadWriteMany StorageClass.
 persistence:
-  enabled: true
+  enabled: false
   accessMode: ReadWriteOnce
   size: 10Gi
   storageClass: "fast-ssd"
@@ -34,34 +37,31 @@ service:
   type: ClusterIP
   port: 8080
   targetPort: 8080
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "8080"
-    prometheus.io/path: "/metrics"
+  annotations: {}
 
 ingress:
   enabled: true
   className: "nginx"
   annotations:
-    kubernetes.io/ingress.class: nginx
-    kubernetes.io/tls-acme: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
   hosts:
-    - host: metrics-accumulator.your-domain.com
+    - host: metrics-accumulator.example.com
       paths:
         - path: /
           pathType: Prefix
   tls:
     - secretName: metrics-accumulator-tls
       hosts:
-        - metrics-accumulator.your-domain.com
+        - metrics-accumulator.example.com
 
 serviceMonitor:
   enabled: true
   interval: "30s"
   scrapeTimeout: "10s"
-  path: "/metrics"
+  path: "/metrics/default"
+  honorLabels: true
   labels:
     prometheus: kube-prometheus
 
@@ -74,15 +74,19 @@ networkPolicy:
     - from:
         - namespaceSelector:
             matchLabels:
-              name: monitoring
+              kubernetes.io/metadata.name: monitoring
         - namespaceSelector:
             matchLabels:
-              name: ingress-nginx
+              kubernetes.io/metadata.name: ingress-nginx
       ports:
         - protocol: TCP
           port: 8080
   egress:
-    - {}
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
 
 podDisruptionBudget:
   enabled: true
@@ -90,41 +94,51 @@ podDisruptionBudget:
 
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1001
-  fsGroup: 1001
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
 
 securityContext:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
   runAsNonRoot: true
-  runAsUser: 1001
+  runAsUser: 10001
   capabilities:
     drop:
       - ALL
 
+startupProbe:
+  httpGet:
+    path: /service-discovery
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30
+
 livenessProbe:
   httpGet:
-    path: /health
+    path: /service-discovery
     port: http
-  initialDelaySeconds: 30
-  periodSeconds: 10
+  initialDelaySeconds: 15
+  periodSeconds: 20
   timeoutSeconds: 5
   failureThreshold: 3
 
 readinessProbe:
   httpGet:
-    path: /ready
+    path: /service-discovery
     port: http
   initialDelaySeconds: 5
-  periodSeconds: 5
+  periodSeconds: 10
   timeoutSeconds: 3
   failureThreshold: 3
 
 env:
   - name: LOG_LEVEL
     value: "INFO"
-  - name: METRICS_RETENTION_HOURS
-    value: "24"
 
 affinity:
   podAntiAffinity:
@@ -143,4 +157,4 @@ tolerations:
   - key: "monitoring"
     operator: "Equal"
     value: "true"
-    effect: "NoSchedule" 
+    effect: "NoSchedule"

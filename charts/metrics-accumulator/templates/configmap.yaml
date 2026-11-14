@@ -1,4 +1,4 @@
-{{- if .Values.config }}
+{{- if (include "metrics-accumulator.hasConfig" .) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,4 +8,4 @@ metadata:
 data:
   metrics-accumulator.yml: |-
 {{ .Values.config | indent 4 }}
-{{- end }} 
+{{- end }}

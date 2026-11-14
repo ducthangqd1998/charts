@@ -1,3 +1,27 @@
+{{- $hasConfig := include "metrics-accumulator.hasConfig" . -}}
+{{- $selectorLabels := include "metrics-accumulator.selectorLabels" . | fromYaml -}}
+{{- $podLabels := mergeOverwrite (dict) $selectorLabels (.Values.podLabels | default dict) -}}
+{{- $podAnnotations := dict -}}
+{{- if $hasConfig }}
+{{- $_ := set $podAnnotations "checksum/config" (include (print $.Template.BasePath "/configmap.yaml") . | sha256sum) -}}
+{{- end }}
+{{- $podAnnotations = mergeOverwrite $podAnnotations (.Values.podAnnotations | default dict) -}}
+{{- $envList := concat (.Values.env | default list) (.Values.extraEnv | default list) -}}
+{{- $args := list -}}
+{{- if $hasConfig }}
+{{- $hasCustomConfigArg := false -}}
+{{- range (.Values.extraArgs | default list) }}
+{{- if hasPrefix "--config-file" (toString .) }}
+{{- $hasCustomConfigArg = true -}}
+{{- end }}
+{{- end }}
+{{- if not $hasCustomConfigArg }}
+{{- $args = append $args "--config-file=/etc/metrics-accumulator/metrics-accumulator.yml" -}}
+{{- end }}
+{{- end }}
+{{- if .Values.extraArgs }}
+{{- $args = concat $args .Values.extraArgs -}}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -10,100 +34,112 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      {{- include "metrics-accumulator.selectorLabels" . | nindent 6 }}
+      {{- toYaml $selectorLabels | nindent 6 }}
   template:
     metadata:
+      {{- if $podAnnotations }}
       annotations:
-        {{- with .Values.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- toYaml $podAnnotations | nindent 8 }}
+      {{- end }}
       labels:
-        {{- include "metrics-accumulator.selectorLabels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- toYaml $podLabels | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "metrics-accumulator.serviceAccountName" . }}
+      {{- if hasKey .Values.serviceAccount "automount" }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      {{- end }}
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 60 }}
       {{- with .Values.initContainers }}
       initContainers:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
           securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: {{ include "metrics-accumulator.image" . }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "metrics-accumulator.image" . | quote }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if $args }}
+          args:
+            {{- toYaml $args | nindent 12 }}
+          {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
               protocol: TCP
-          {{- if .Values.livenessProbe }}
+          {{- if $envList }}
+          env:
+            {{- toYaml $envList | nindent 12 }}
+          {{- end }}
+          {{- with .Values.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.lifecycle }}
+          lifecycle:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- end }}
+          {{- with .Values.livenessProbe }}
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
-          {{- if .Values.readinessProbe }}
+          {{- with .Values.readinessProbe }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
+          {{- with .Values.resources }}
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-          {{- if .Values.config }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if $hasConfig }}
             - name: config
               mountPath: /etc/metrics-accumulator/metrics-accumulator.yml
               subPath: metrics-accumulator.yml
-          {{- end }}
-          {{- if or .Values.env .Values.extraEnvFrom }}
-          env:
-            {{- if .Values.env }}
-            {{- toYaml .Values.env | nindent 12 }}
-            {{- end }}
-          {{- end }}
-          {{- if .Values.extraEnvFrom }}
-          envFrom:
-            {{- toYaml .Values.extraEnvFrom | nindent 12 }}
-          {{- end }}
-          {{- if or .Values.volumeMounts .Values.persistence.enabled }}
-          volumeMounts:
-            {{- if .Values.volumeMounts }}
-            {{- toYaml .Values.volumeMounts | nindent 12 }}
+              readOnly: true
             {{- end }}
             {{- if .Values.persistence.enabled }}
             - name: storage
               mountPath: {{ .Values.persistence.mountPath | default "/data" }}
             {{- end }}
-          {{- end }}
-          {{- if .Values.extraArgs }}
-          args:
-            {{- toYaml .Values.extraArgs | nindent 12 }}
-          {{- end }}
+            {{- with .Values.volumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
         {{- with .Values.extraContainers }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-      {{- if or .Values.volumes .Values.persistence.enabled }}
       volumes:
-        {{- if .Values.volumes }}
-        {{- toYaml .Values.volumes | nindent 8 }}
+        - name: tmp
+          emptyDir: {}
+        {{- if $hasConfig }}
+        - name: config
+          configMap:
+            name: {{ include "metrics-accumulator.fullname" . }}-config
         {{- end }}
         {{- if .Values.persistence.enabled }}
         - name: storage
           persistentVolumeClaim:
             claimName: {{ include "metrics-accumulator.fullname" . }}
         {{- end }}
-      {{- end }}
-      {{- if .Values.config }}
-      volumes:
-        - name: config
-          configMap:
-            name: {{ include "metrics-accumulator.fullname" . }}-config
-      {{- end }}
+        {{- with .Values.volumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -115,4 +151,4 @@ spec:
       {{- with .Values.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
-      {{- end }} 
+      {{- end }}

@@ -1,9 +1,9 @@
 apiVersion: v2
 name: metrics-accumulator
-description: A Helm chart for metrics-accumulator - an alternative to Prometheus Pushgateway for Lambda functions
+description: A Helm chart for metrics-accumulator - an alternative to Prometheus Pushgateway for ephemeral workloads
 type: application
-version: 0.1.0
-appVersion: "latest"
+version: 0.1.5
+appVersion: "2.0.1"
 keywords:
   - metrics
   - prometheus
@@ -16,4 +16,4 @@ sources:
   - https://github.com/ducthangqd1998/charts
 maintainers:
   - name: Thang Mai
-    email: maiducthang.it@gmail.com 
+    email: maiducthang.it@gmail.com

@@ -1,45 +1,49 @@
 # Default values for metrics-accumulator.
 # This is a YAML-formatted file.
 
-# Replica count
 replicaCount: 1
 
 image:
   # Image repository (default bpoole6/metrics-accumulator) or your custom image
   repository: bpoole6/metrics-accumulator
+  # Overrides the image tag whose default is the chart appVersion ("2.0.1")
   tag: ""
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
+commonLabels: {}
 
 serviceAccount:
   # Specifies whether a service account should be created
   create: true
+  # Disable ServiceAccount API token automount by default
+  automount: false
   # Annotations to add to the service account
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: ""
 
-podAnnotations: 
-  prometheus.io/scrape: "true"
-  prometheus.io/port: "8080"
-  prometheus.io/path: "/metrics"
-
+podAnnotations: {}
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+# Pod Security Standards (Restricted profile)
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
 
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
 
 service:
   type: ClusterIP
@@ -52,93 +56,89 @@ ingress:
   enabled: false
   className: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
   hosts:
     - host: metrics-accumulator.local
       paths:
         - path: /
           pathType: Prefix
   tls: []
-  #  - secretName: metrics-accumulator-tls
-  #    hosts:
-  #      - metrics-accumulator.local
 
-resources: {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
 
 autoscaling:
   enabled: false
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 10
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
 # Additional volumes on the output Deployment definition.
 volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
 
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
 
-# Persistence for metrics storage
+# Persistence for metrics storage.
+# Note: ReadWriteOnce PVCs can only attach to a single node/replica unless using ReadWriteMany.
 persistence:
   enabled: false
-  # accessMode: ReadWriteOnce
-  # size: 1Gi
-  # storageClass: ""
-  # mountPath: /data
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  storageClass: ""
+  mountPath: /data
 
 # Environment variables
 env: []
-# - name: ENV_VAR_NAME
-#   value: "value"
+extraEnv: []
+extraEnvFrom: []
 
-# Liveness and readiness probes
+# Probes target the named container port `http` (service.targetPort) on the
+# upstream unauthenticated Prometheus HTTP SD endpoint `/service-discovery`.
+startupProbe:
+  httpGet:
+    path: /service-discovery
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 30
+
 livenessProbe:
-  exec:
-    command:
-      - wget
-      - -O
-      - '-'
-      - http://localhost:8080
-  initialDelaySeconds: 0
+  httpGet:
+    path: /service-discovery
+    port: http
+  initialDelaySeconds: 10
   periodSeconds: 20
-  timeoutSeconds: 2
+  timeoutSeconds: 3
   failureThreshold: 5
 
 readinessProbe:
-  exec:
-    command:
-      - wget
-      - -O
-      - '-'
-      - http://localhost:8080
-  initialDelaySeconds: 0
-  periodSeconds: 20
-  timeoutSeconds: 2
-  failureThreshold: 5
+  httpGet:
+    path: /service-discovery
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+lifecycle:
+  preStop:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - sleep 10
+
+terminationGracePeriodSeconds: 60
 
 # ServiceMonitor configuration for Prometheus Operator
 serviceMonitor:
@@ -146,55 +146,53 @@ serviceMonitor:
   namespace: ""
   interval: "30s"
   scrapeTimeout: "10s"
-  path: "/metrics"
+  path: "/metrics/default"
+  honorLabels: true
   labels: {}
   annotations: {}
 
 # NetworkPolicy
 networkPolicy:
   enabled: false
-  policyTypes: []
+  policyTypes:
+    - Ingress
+    - Egress
   ingress: []
   egress: []
 
 # PodDisruptionBudget
 podDisruptionBudget:
   enabled: false
-  # minAvailable: 1
+  minAvailable: 1
   # maxUnavailable: 1
 
-# Extra configuration
+# Extra CLI arguments and containers
 extraArgs: []
-extraEnvFrom: []
-
-# Init containers
 initContainers: []
-
-# Additional containers
 extraContainers: []
 
-# Configuration file for metrics-accumulator (raw YAML content)
-# If this field is non-empty a ConfigMap will be generated and mounted to the pod at
-#   /etc/metrics-accumulator/metrics-accumulator.yml
-# The application is started with the argument:
+# Configuration file for metrics-accumulator (raw YAML content).
+# If non-empty, a ConfigMap is created, mounted at
+# /etc/metrics-accumulator/metrics-accumulator.yml, and passed to the container via:
 #   --config-file=/etc/metrics-accumulator/metrics-accumulator.yml
-# so it will automatically pick up the configuration you place here.
 #
-# === How to customise ===
-# 1. Copy the block below, remove the leading "# " and adapt values as required.
-# 2. Keep correct YAML indentation (2 spaces).
-# 3. Leave this key completely empty (i.e. "config: |\n" with nothing below) if you
-#    prefer to rely on the container defaults.
+# SECURITY WARNING:
+# NEVER commit plaintext `apiKey` values into `values.yaml` or Git!
+# For production secrets, mount a Secret managed by External Secrets Operator / Vault
+# via `volumes` + `volumeMounts` and pass `--config-file=...` in `extraArgs`, or inject
+# sensitive environment variables via `extraEnv` / `extraEnvFrom`.
 #
-# --- Minimal example ---------------------------------------------------------
-# global:
-#   hostAddress: metrics-accumulator:8080   # Service address
-# metricGroups:
-#   default:
-#     apiKey: "<your-api-key>"             # Key sent in HTTP header X-API-KEY
-#     serviceDiscoveryLabels:
-#       env: dev                            # Default Prometheus labels
-# ---------------------------------------------------------------------------
-
-config: |
-# (uncomment and customise as shown in the sample above) 
+# Example structure (DO NOT hardcode real API keys in Git):
+# config: |
+#   global:
+#     restartCronExpression: "0 0 0 ? * *"
+#     hostAddress: metrics-accumulator:8080
+#   metricGroups:
+#     default:
+#       displayMetrics: true
+#       name: default
+#       maxTimeSeries: 2500
+#       apiKey: "<inject-via-secret-not-git>"
+#       serviceDiscoveryLabels:
+#         env: dev
+config: ""

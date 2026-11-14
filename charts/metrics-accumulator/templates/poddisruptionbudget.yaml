@@ -6,13 +6,14 @@ metadata:
   labels:
     {{- include "metrics-accumulator.labels" . | nindent 4 }}
 spec:
-  {{- if .Values.podDisruptionBudget.minAvailable }}
-  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
-  {{- end }}
-  {{- if .Values.podDisruptionBudget.maxUnavailable }}
+  {{- if and (hasKey .Values.podDisruptionBudget "maxUnavailable") (not (kindIs "invalid" .Values.podDisruptionBudget.maxUnavailable)) (ne (toString .Values.podDisruptionBudget.maxUnavailable) "") }}
   maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- else if and (hasKey .Values.podDisruptionBudget "minAvailable") (not (kindIs "invalid" .Values.podDisruptionBudget.minAvailable)) (ne (toString .Values.podDisruptionBudget.minAvailable) "") }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- else }}
+  minAvailable: 1
   {{- end }}
   selector:
     matchLabels:
       {{- include "metrics-accumulator.selectorLabels" . | nindent 6 }}
-{{- end }} 
+{{- end }}
