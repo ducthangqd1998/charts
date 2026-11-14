@@ -1,13 +1,38 @@
 {{- if .Values.httpRoute.enabled }}
+{{- $baseLabels := include "crw.labels" . | fromYaml }}
+{{- $labels := mergeOverwrite (dict) $baseLabels (.Values.httpRoute.labels | default dict) }}
+{{- $renderedRules := list }}
+{{- if .Values.httpRoute.rules }}
+{{- range .Values.httpRoute.rules }}
+{{- $hasRedirect := false }}
+{{- range (.filters | default list) }}
+{{- if eq .type "RequestRedirect" }}
+{{- $hasRedirect = true }}
+{{- end }}
+{{- end }}
+{{- $rule := dict }}
+{{- with .name }}{{- $_ := set $rule "name" . }}{{- end }}
+{{- with .matches }}{{- $_ := set $rule "matches" . }}{{- end }}
+{{- with .filters }}{{- $_ := set $rule "filters" . }}{{- end }}
+{{- with .timeouts }}{{- $_ := set $rule "timeouts" . }}{{- end }}
+{{- if .backendRefs }}
+{{- $_ := set $rule "backendRefs" .backendRefs }}
+{{- else if not $hasRedirect }}
+{{- $_ := set $rule "backendRefs" (list (dict "group" "" "kind" "Service" "name" (include "crw.fullname" $) "port" $.Values.service.port "weight" 1)) }}
+{{- end }}
+{{- $renderedRules = append $renderedRules $rule }}
+{{- end }}
+{{- else }}
+{{- $defaultMatch := list (dict "path" (dict "type" "PathPrefix" "value" "/")) }}
+{{- $defaultBackend := list (dict "group" "" "kind" "Service" "name" (include "crw.fullname" .) "port" .Values.service.port "weight" 1) }}
+{{- $renderedRules = append $renderedRules (dict "matches" $defaultMatch "backendRefs" $defaultBackend) }}
+{{- end }}
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
   name: {{ include "crw.fullname" . }}
   labels:
-    {{- include "crw.labels" . | nindent 4 }}
-    {{- with .Values.httpRoute.labels }}
-    {{- toYaml . | nindent 4 }}
-    {{- end }}
+    {{- toYaml $labels | nindent 4 }}
   {{- with .Values.httpRoute.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -20,35 +45,5 @@ spec:
     {{- toYaml . | nindent 4 }}
   {{- end }}
   rules:
-    {{- if .Values.httpRoute.rules }}
-    {{- range .Values.httpRoute.rules }}
-    - matches:
-        {{- toYaml .matches | nindent 8 }}
-      {{- with .filters }}
-      filters:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      backendRefs:
-        {{- if .backendRefs }}
-        {{- toYaml .backendRefs | nindent 8 }}
-        {{- else }}
-        - group: ""
-          kind: Service
-          name: {{ include "crw.fullname" $ }}
-          port: {{ $.Values.service.port }}
-          weight: 1
-        {{- end }}
-    {{- end }}
-    {{- else }}
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /
-      backendRefs:
-        - group: ""
-          kind: Service
-          name: {{ include "crw.fullname" . }}
-          port: {{ .Values.service.port }}
-          weight: 1
-    {{- end }}
+    {{- toYaml $renderedRules | nindent 4 }}
 {{- end }}

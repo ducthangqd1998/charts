@@ -1,0 +1,6 @@
+dependencies:
+- name: searxng
+  repository: https://techpipe-io.github.io/searxng-helm-chart/
+  version: 0.1.11
+digest: sha256:b66d16483053fc27b2954c25b84c2a9ed8ed7097dd693e411cef223d6403088e
+generated: "2026-11-08T11:42:33.459171+07:00"

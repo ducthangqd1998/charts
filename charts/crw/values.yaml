@@ -15,6 +15,7 @@ commonLabels: {}
 
 serviceAccount:
   create: true
+  automount: false
   annotations: {}
   name: ""
 
@@ -39,6 +40,7 @@ securityContext:
 service:
   type: ClusterIP
   port: 3000
+  targetPort: 3000
   annotations: {}
 
 # Web search configuration
@@ -49,10 +51,16 @@ search:
   backendUrl: ""
 
 # SearXNG Dependency (Subchart from https://techpipe-io.github.io/searxng-helm-chart/)
-# Enabled by default to provide an out-of-the-box local search backend.
+# Enabled by default to provide an out-of-the-box local search backend (requires Kubernetes >= 1.27).
 # Set to false if you already run an external SearXNG cluster or only need web scraping / crawling.
 searxng:
   enabled: true
+  secret:
+    create: true
+    # GitOps / Argo CD users: set create: false and reference a pre-existing Secret
+    # containing key SEARXNG_SECRET to avoid Helm lookup / randAlphaNum sync drift.
+    existingSecret: ""
+    existingSecretKey: SEARXNG_SECRET
   config:
     useDefaultSettings: true
     settings:
@@ -60,6 +68,11 @@ searxng:
         formats:
           - html
           - json
+  persistence:
+    cache:
+      # Disabled by default to use emptyDir, avoiding Pending PVCs on clusters without a
+      # default StorageClass and ReadWriteOnce Multi-Attach errors when scaling SearXNG.
+      enabled: false
   valkey:
     enabled: false # Set true if you want distributed caching/rate-limiting via Valkey
 
@@ -69,6 +82,8 @@ resources:
     memory: 128Mi
   limits:
     memory: 256Mi
+
+startupProbe: {}
 
 livenessProbe:
   httpGet:
@@ -88,7 +103,15 @@ readinessProbe:
   timeoutSeconds: 3
   failureThreshold: 3
 
-terminationGracePeriodSeconds: 30
+lifecycle:
+  preStop:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - sleep 10
+
+terminationGracePeriodSeconds: 60
 
 env: {}
 extraEnv: []
@@ -101,6 +124,14 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 topologySpreadConstraints: []
+
+# HorizontalPodAutoscaler (autoscaling/v2) configuration
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
 
 # Standard Kubernetes Ingress configuration
 ingress:
@@ -127,8 +158,12 @@ httpRoute:
 podDisruptionBudget:
   enabled: false
   minAvailable: 1
+  # maxUnavailable: 1
 
 # NetworkPolicy configuration
+# When enabled with empty ingress/egress lists, sensible defaults are rendered:
+# - Ingress allowed on container port (service.targetPort)
+# - Egress allowed for DNS (UDP/TCP 53), HTTP/HTTPS scraping (80/443), and SearXNG (8080)
 networkPolicy:
   enabled: false
   policyTypes:

@@ -1,3 +1,8 @@
+{{- $autoscaling := .Values.autoscaling | default dict -}}
+{{- $selectorLabels := include "crw.selectorLabels" . | fromYaml -}}
+{{- $podLabels := mergeOverwrite (dict) ($selectorLabels) (.Values.podLabels | default dict) -}}
+{{- $backendUrl := include "crw.searchBackendUrl" . -}}
+{{- $hasEnv := or $backendUrl (not .Values.search.enabled) .Values.env .Values.extraEnv -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,17 +10,16 @@ metadata:
   labels:
     {{- include "crw.labels" . | nindent 4 }}
 spec:
+  {{- if not $autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
-      {{- include "crw.selectorLabels" . | nindent 6 }}
+      {{- toYaml $selectorLabels | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "crw.selectorLabels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- toYaml $podLabels | nindent 8 }}
       {{- with .Values.podAnnotations }}
       annotations:
         {{- toYaml . | nindent 8 }}
@@ -26,11 +30,14 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       serviceAccountName: {{ include "crw.serviceAccountName" . }}
+      {{- if hasKey .Values.serviceAccount "automount" }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automount }}
+      {{- end }}
       {{- with .Values.podSecurityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 30 }}
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds | default 60 }}
       containers:
         - name: {{ .Chart.Name }}
           {{- with .Values.securityContext }}
@@ -41,10 +48,10 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.service.targetPort | default 3000 }}
               protocol: TCP
+          {{- if $hasEnv }}
           env:
-            {{- $backendUrl := include "crw.searchBackendUrl" . }}
             {{- if $backendUrl }}
             - name: CRW_SEARCH__SEARCH_BACKEND_URL
               value: {{ $backendUrl | quote }}
@@ -61,6 +68,7 @@ spec:
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- end }}
           {{- with .Values.extraEnvFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}
@@ -71,14 +79,22 @@ spec:
             {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- with .Values.lifecycle }}
           lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "sleep 10"]
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.startupProbe }}
+          startupProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.livenessProbe }}
           livenessProbe:
-            {{- toYaml .Values.livenessProbe | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
           readinessProbe:
-            {{- toYaml .Values.readinessProbe | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
