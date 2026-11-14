@@ -69,7 +69,7 @@ If you have a tool or infrastructure component that needs a Helm chart:
 
 5. **Commit and Push**
    ```bash
-   git add .
+   git add charts/your-chart
    git commit -m "feat: add new chart for awesome-tool"
    git push origin feature/your-feature-name
    ```
@@ -233,9 +233,11 @@ docs(README): update installation instructions
    - Security considerations
    - Best practices adherence
 3. **Testing**: Verification that the chart works as expected
-4. **Approval**: Approved PRs are merged to main branch
+4. **Approval**: Approved PRs are merged to the `master` branch
 
 ## Release Process
+
+Charts are packaged and published automatically to GitHub Releases and the `gh-pages` Helm index via `.github/workflows/release.yml` (`chart-releaser-action`) whenever a chart's `version` in `Chart.yaml` is bumped on `master`. Do not commit `.tgz` archives or `index.yaml` directly to `master`.
 
 Charts are released when:
 1. New chart is added

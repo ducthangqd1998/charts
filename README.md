@@ -40,6 +40,18 @@ It includes:
 - Vendor-neutral Kubernetes Ingress and Gateway API `HTTPRoute` support.
 - Hardened non-root Pod Security Standards (Restricted profile, read-only rootfs).
 
+### [9router](./charts/9router)
+
+A Helm chart for [9Router](https://github.com/decolua/9router) — a unified AI routing and OpenAI-compatible LLM proxy gateway.
+
+It includes:
+
+- Pod Security Standards (`Restricted`) non-root deployment with `readOnlyRootFilesystem` and writable `DATA_DIR` / scratch mounts.
+- Optional persistence via PVC or ephemeral `emptyDir` default.
+- Flexible secret injection via `extraEnv` and `extraEnvFrom`.
+- Vendor-neutral Kubernetes Ingress and Gateway API `HTTPRoute` support.
+- Production resilience options (`HorizontalPodAutoscaler` v2, `PodDisruptionBudget`, `NetworkPolicy`, and graceful `preStop` drain).
+
 ## Installation
 
 Add the Helm repository:
@@ -65,7 +77,9 @@ helm install my-release ./charts/<chart-name>
 
 ## Documentation
 
+- [9router documentation](./charts/9router/README.md)
 - [aws-alb-gateway documentation](./charts/aws-alb-gateway/README.md)
+- [crw documentation](./charts/crw/README.md)
 - [metrics-accumulator documentation](./charts/metrics-accumulator/README.md)
 - [Contributing guide](./CONTRIBUTING.md)
 
