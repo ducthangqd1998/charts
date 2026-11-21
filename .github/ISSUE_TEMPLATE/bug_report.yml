@@ -1,0 +1,35 @@
+name: Bug Report
+description: Report a rendering, schema, security, or runtime issue in a Helm chart.
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: chart
+    attributes:
+      label: Chart
+      options:
+        - 9router
+        - aws-alb-gateway
+        - crw
+        - metrics-accumulator
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Chart Version
+      placeholder: "e.g. 0.1.2"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the bug and paste any error output from `helm lint`, `helm template`, or Kubernetes events.
+    validations:
+      required: true
+  - type: textarea
+    id: values
+    attributes:
+      label: Minimal `values.yaml` (sanitized, no secrets)
+      render: yaml

@@ -1,0 +1,23 @@
+name: Chart Feature / Request
+description: Propose a new chart, feature, or enhancement to an existing Helm chart.
+labels: ["enhancement"]
+body:
+  - type: input
+    id: chart
+    attributes:
+      label: Chart Name
+      placeholder: "e.g. 9router, crw, or a new chart name"
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Use Case & Motivation
+      description: Explain the problem this solves and why it belongs in the chart.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Values / Behavior
+      render: yaml
