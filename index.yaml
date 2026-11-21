@@ -1,6 +1,43 @@
 apiVersion: v1
 entries:
   9router:
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/changes: |
+        - kind: added
+          description: Add kubeVersion constraint, chart icon, and Artifact Hub metadata annotations
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/ducthangqd1998/charts/tree/master/charts/9router
+        - name: Upstream Project
+          url: https://github.com/decolua/9router
+    apiVersion: v2
+    appVersion: 0.5.119
+    created: "2026-11-21T18:13:47.877773841Z"
+    description: Deploy 9Router, a unified AI routing and OpenAI-compatible LLM proxy
+      gateway for Kubernetes.
+    digest: fbde57a12adfe4ed871ad47e1efa65d3b1f12e45b90ae2c8a7ddbfbfb1e4779a
+    home: https://github.com/decolua/9router
+    icon: https://helm.sh/img/helm.svg
+    keywords:
+    - 9router
+    - llm
+    - ai-gateway
+    - openai-proxy
+    - gateway-api
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: maiducthang.it@gmail.com
+      name: Thang Mai
+    name: 9router
+    sources:
+    - https://github.com/decolua/9router
+    - https://github.com/ducthangqd1998/charts/tree/master/charts/9router
+    type: application
+    urls:
+    - https://github.com/ducthangqd1998/charts/releases/download/9router-0.1.2/9router-0.1.2.tgz
+    version: 0.1.2
   - apiVersion: v2
     appVersion: 0.5.119
     created: "2026-11-21T16:43:06.117238498Z"
@@ -50,6 +87,42 @@ entries:
     - https://github.com/ducthangqd1998/charts/releases/download/9router-0.1.0/9router-0.1.0.tgz
     version: 0.1.0
   aws-alb-gateway:
+  - annotations:
+      artifacthub.io/category: networking
+      artifacthub.io/changes: |
+        - kind: added
+          description: Add kubeVersion constraint, chart icon, and Artifact Hub metadata annotations
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/ducthangqd1998/charts/tree/master/charts/aws-alb-gateway
+        - name: AWS Load Balancer Controller
+          url: https://kubernetes-sigs.github.io/aws-load-balancer-controller/
+    apiVersion: v2
+    appVersion: 0.1.2
+    created: "2026-11-21T18:13:48.040306963Z"
+    description: Manage AWS Load Balancer Controller Gateway API resources for EKS.
+    digest: 56d9516db44c38a4eb33b2794708ca63a1cbfd6770dd0be224a9edf7a16c2b34
+    home: https://kubernetes-sigs.github.io/aws-load-balancer-controller/
+    icon: https://helm.sh/img/helm.svg
+    keywords:
+    - aws
+    - eks
+    - alb
+    - gateway-api
+    - aws-load-balancer-controller
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: maiducthang.it@gmail.com
+      name: Thang Mai
+    name: aws-alb-gateway
+    sources:
+    - https://github.com/kubernetes-sigs/aws-load-balancer-controller
+    - https://github.com/ducthangqd1998/charts
+    type: application
+    urls:
+    - https://github.com/ducthangqd1998/charts/releases/download/aws-alb-gateway-0.1.3/aws-alb-gateway-0.1.3.tgz
+    version: 0.1.3
   - apiVersion: v2
     appVersion: 0.1.2
     created: "2026-11-14T19:09:11.968274946Z"
@@ -116,6 +189,55 @@ entries:
     - https://ducthangqd1998.github.io/charts/aws-alb-gateway-0.1.0.tgz
     version: 0.1.0
   crw:
+  - annotations:
+      artifacthub.io/category: ai-machine-learning
+      artifacthub.io/changes: |
+        - kind: added
+          description: Add default startupProbe, helm test hook, kubeVersion constraint, and Artifact Hub metadata
+        - kind: changed
+          description: Document Pod Security Standards differences between crw and bundled searxng subchart
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/ducthangqd1998/charts/tree/master/charts/crw
+        - name: Upstream Project
+          url: https://github.com/fastcrw/crw
+    apiVersion: v2
+    appVersion: 0.42.1
+    created: "2026-11-21T18:13:48.215075799Z"
+    dependencies:
+    - condition: searxng.enabled
+      name: searxng
+      repository: https://techpipe-io.github.io/searxng-helm-chart/
+      version: 0.1.11
+    description: High-performance, lightweight web scraping, crawling, and AI search
+      API written in Rust (self-hosted Tavily and Firecrawl alternative)
+    digest: 24085c112c44ee43e212e1fd58f6aa01647737697c9245f4563c4c2151fe5621
+    home: https://github.com/ducthangqd1998/charts
+    icon: https://helm.sh/img/helm.svg
+    keywords:
+    - crw
+    - fastcrw
+    - web-scraping
+    - crawler
+    - search
+    - tavily
+    - firecrawl
+    - ai-agents
+    - rag
+    - mcp
+    kubeVersion: '>=1.27.0-0'
+    maintainers:
+    - email: maiducthang.it@gmail.com
+      name: Thang Mai
+    name: crw
+    sources:
+    - https://github.com/fastcrw/crw
+    - https://github.com/ducthangqd1998/charts
+    type: application
+    urls:
+    - https://github.com/ducthangqd1998/charts/releases/download/crw-0.1.2/crw-0.1.2.tgz
+    version: 0.1.2
   - apiVersion: v2
     appVersion: 0.42.1
     created: "2026-11-14T19:09:12.228269639Z"
@@ -151,6 +273,43 @@ entries:
     - https://github.com/ducthangqd1998/charts/releases/download/crw-0.1.1/crw-0.1.1.tgz
     version: 0.1.1
   metrics-accumulator:
+  - annotations:
+      artifacthub.io/category: monitoring-logging
+      artifacthub.io/changes: |
+        - kind: added
+          description: Add PSS Restricted helm test hook, kubeVersion constraint, chart icon, and Artifact Hub metadata
+      artifacthub.io/license: Apache-2.0
+      artifacthub.io/links: |
+        - name: Source
+          url: https://github.com/ducthangqd1998/charts/tree/master/charts/metrics-accumulator
+        - name: Upstream Project
+          url: https://github.com/bpoole6/metrics-accumulator
+    apiVersion: v2
+    appVersion: 2.0.1
+    created: "2026-11-21T18:13:48.382681498Z"
+    description: A Helm chart for metrics-accumulator - an alternative to Prometheus
+      Pushgateway for ephemeral workloads
+    digest: ab64520abc8ce67fbcdf2abac5c0227369e7dcebc60db75155924c9b6ffb1156
+    home: https://github.com/ducthangqd1998/charts
+    icon: https://helm.sh/img/helm.svg
+    keywords:
+    - metrics
+    - prometheus
+    - monitoring
+    - lambda
+    - accumulator
+    kubeVersion: '>=1.25.0-0'
+    maintainers:
+    - email: maiducthang.it@gmail.com
+      name: Thang Mai
+    name: metrics-accumulator
+    sources:
+    - https://github.com/bpoole6/metrics-accumulator
+    - https://github.com/ducthangqd1998/charts
+    type: application
+    urls:
+    - https://github.com/ducthangqd1998/charts/releases/download/metrics-accumulator-0.1.6/metrics-accumulator-0.1.6.tgz
+    version: 0.1.6
   - apiVersion: v2
     appVersion: 2.0.1
     created: "2026-11-14T19:09:12.458291344Z"
@@ -295,4 +454,4 @@ entries:
     urls:
     - https://ducthangqd1998.github.io/charts/metrics-accumulator-0.1.0.tgz
     version: 0.1.0
-generated: "2026-11-21T16:43:06.11726533Z"
+generated: "2026-11-21T18:13:48.3827169Z"
