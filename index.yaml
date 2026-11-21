@@ -2,6 +2,30 @@ apiVersion: v1
 entries:
   9router:
   - apiVersion: v2
+    appVersion: 0.5.119
+    created: "2026-11-21T16:43:06.117238498Z"
+    description: Deploy 9Router, a unified AI routing and OpenAI-compatible LLM proxy
+      gateway for Kubernetes.
+    digest: ed6c2fc0e8d0d9c119101d8be6de1aec9922f4eaf87b66108a8f759026f9ff44
+    home: https://github.com/decolua/9router
+    keywords:
+    - 9router
+    - llm
+    - ai-gateway
+    - openai-proxy
+    - gateway-api
+    maintainers:
+    - email: maiducthang.it@gmail.com
+      name: Thang Mai
+    name: 9router
+    sources:
+    - https://github.com/decolua/9router
+    - https://github.com/ducthangqd1998/charts/tree/master/charts/9router
+    type: application
+    urls:
+    - https://github.com/ducthangqd1998/charts/releases/download/9router-0.1.1/9router-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
     appVersion: 0.5.112
     created: "2026-11-14T19:09:11.763757601Z"
     description: Deploy 9Router, a unified AI routing and OpenAI-compatible LLM proxy
@@ -271,4 +295,4 @@ entries:
     urls:
     - https://ducthangqd1998.github.io/charts/metrics-accumulator-0.1.0.tgz
     version: 0.1.0
-generated: "2026-11-14T19:09:12.458309671Z"
+generated: "2026-11-21T16:43:06.11726533Z"
