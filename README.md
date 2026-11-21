@@ -1,5 +1,7 @@
 # Helm Charts
 
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/thangmai-charts)](https://artifacthub.io/packages/search?repo=thangmai-charts)
+
 This repository contains community Helm charts for Kubernetes tooling and infrastructure components.
 
 ## Available Charts
