@@ -82,6 +82,14 @@ jobs:
           print(f"Validated {checked} static YAML files with zero duplicate keys.")
           PY
 
+      - name: Set up kubeconform
+        run: |
+          set -euo pipefail
+          KUBECONFORM_VERSION="v0.6.7"
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+
       - name: Run Helm lint and template checks
         run: |
           set -euo pipefail
@@ -93,7 +101,7 @@ jobs:
             [ -d "$chart" ] || continue
             chart_name="$(basename "$chart")"
             echo "=== Linting $chart_name (default values) ==="
-            helm lint "$chart"
+            helm lint --strict "$chart"
             helm template "ci-${chart_name}" "$chart" > "${render_dir}/${chart_name}-default.yaml"
 
             if [ -d "${chart}/examples" ]; then
@@ -106,7 +114,7 @@ jobs:
                     ;;
                 esac
                 echo "=== Linting $chart_name ($base_name) ==="
-                helm lint "$chart" -f "$values_file"
+                helm lint --strict "$chart" -f "$values_file"
                 helm template "ci-${chart_name}" "$chart" -f "$values_file" > "${render_dir}/${chart_name}-${base_name}"
               done
             fi
@@ -114,6 +122,9 @@ jobs:
             echo "=== Packaging hygiene check for $chart_name ==="
             helm package "$chart" --destination "$pkg_dir"
           done
+
+          echo "=== Kubernetes OpenAPI schema validation (kubeconform) ==="
+          kubeconform -strict -ignore-missing-schemas -summary "${render_dir}"/*.yaml
 
           for archive in "$pkg_dir"/*.tgz; do
             if tar -ztf "$archive" | grep -E '(^|/)(test|tests|scripts)(/|$)|home-server|\.local\.yaml$'; then
