@@ -2,8 +2,10 @@ apiVersion: v2
 name: aws-alb-gateway
 description: Manage AWS Load Balancer Controller Gateway API resources for EKS.
 type: application
-version: 0.1.2
+version: 0.1.3
 appVersion: "0.1.2"
+kubeVersion: ">=1.25.0-0"
+icon: https://helm.sh/img/helm.svg
 keywords:
   - aws
   - eks
@@ -17,3 +19,14 @@ sources:
 maintainers:
   - name: Thang Mai
     email: maiducthang.it@gmail.com
+annotations:
+  artifacthub.io/category: networking
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: Source
+      url: https://github.com/ducthangqd1998/charts/tree/master/charts/aws-alb-gateway
+    - name: AWS Load Balancer Controller
+      url: https://kubernetes-sigs.github.io/aws-load-balancer-controller/
+  artifacthub.io/changes: |
+    - kind: added
+      description: Add kubeVersion constraint, chart icon, and Artifact Hub metadata annotations

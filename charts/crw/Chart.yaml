@@ -2,8 +2,10 @@ apiVersion: v2
 name: crw
 description: High-performance, lightweight web scraping, crawling, and AI search API written in Rust (self-hosted Tavily and Firecrawl alternative)
 type: application
-version: 0.1.1
+version: 0.1.2
 appVersion: "0.42.1"
+kubeVersion: ">=1.27.0-0"
+icon: https://helm.sh/img/helm.svg
 keywords:
   - crw
   - fastcrw
@@ -27,3 +29,16 @@ dependencies:
 maintainers:
   - name: Thang Mai
     email: maiducthang.it@gmail.com
+annotations:
+  artifacthub.io/category: ai-machine-learning
+  artifacthub.io/license: Apache-2.0
+  artifacthub.io/links: |
+    - name: Source
+      url: https://github.com/ducthangqd1998/charts/tree/master/charts/crw
+    - name: Upstream Project
+      url: https://github.com/fastcrw/crw
+  artifacthub.io/changes: |
+    - kind: added
+      description: Add default startupProbe, helm test hook, kubeVersion constraint, and Artifact Hub metadata
+    - kind: changed
+      description: Document Pod Security Standards differences between crw and bundled searxng subchart

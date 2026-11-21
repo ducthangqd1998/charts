@@ -43,3 +43,6 @@
 
 7. Persistent storage is enabled and mounted at {{ .Values.persistence.mountPath | default "/data" }}.
 {{- end }}
+
+Verify release health with Helm test:
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }}

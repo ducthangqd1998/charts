@@ -37,11 +37,9 @@ This Helm chart packages FastCRW for production Kubernetes deployments. Followin
 - **Auto-Discovery**: FastCRW automatically detects the internal SearXNG subchart service endpoint (respecting `searxng.fullnameOverride` and `searxng.nameOverride`) without manual wiring.
 - **External Search Backend Support**: Simply set `searxng.enabled: false` and point `search.backendUrl` to any existing cluster or external SearXNG instance.
 - **Native Model Context Protocol (MCP)**: Directly connects to MCP-compatible coding agents (Claude Code, Cursor).
-- **Hardened Security**:
-  - Non-root execution (`runAsNonRoot: true`, UID `10001`).
-  - Read-only root filesystem (`readOnlyRootFilesystem: true`) with `/tmp` `emptyDir`.
-  - Drop all Linux capabilities (`capabilities.drop: [ALL]`) and `seccompProfile: RuntimeDefault`.
-  - ServiceAccount token automount disabled by default (`serviceAccount.automount: false`).
+- **Hardened Security (Pod Security Standards):**
+  - `crw` itself enforces Pod Security Standards (`Restricted`): non-root execution (`runAsNonRoot: true`, UID `10001`), read-only root filesystem (`readOnlyRootFilesystem: true`) with `/tmp` `emptyDir`, `capabilities.drop: [ALL]`, `seccompProfile: RuntimeDefault`, and `serviceAccount.automount: false`.
+  - **Note on bundled `searxng` subchart:** The upstream `techpipe/searxng` (`0.1.11`) subchart does not expose container/pod `securityContext` overrides and requires a `Baseline` Pod Security Admission profile. For namespaces enforcing `Restricted`, set `searxng.enabled: false` and point `search.backendUrl` to an external SearXNG instance (see [examples/external-searxng-values.yaml](./examples/external-searxng-values.yaml)).
 - **Vendor-Neutral Networking**: Supports standard Kubernetes `Ingress` (`networking.k8s.io/v1`) and Gateway API `HTTPRoute` (`gateway.networking.k8s.io/v1`).
 - **Production Ready**: HorizontalPodAutoscaler (`autoscaling/v2`), PodDisruptionBudget (`policy/v1`), NetworkPolicy with working defaults, probes, graceful shutdown (`preStop` + 60s termination grace period), and JSON schema validation.
 

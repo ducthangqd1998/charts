@@ -35,3 +35,6 @@ FastCRW (AI Web Scraper, Crawler & Search API) has been successfully deployed!
    curl -X POST http://127.0.0.1:3000/v1/scrape \
      -H "Content-Type: application/json" \
      -d '{"url": "https://news.ycombinator.com"}'
+
+4. Verify release health with Helm test:
+   helm test {{ .Release.Name }} -n {{ .Release.Namespace }}
