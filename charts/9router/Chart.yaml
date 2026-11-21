@@ -2,8 +2,8 @@ apiVersion: v2
 name: 9router
 description: Deploy 9Router, a unified AI routing and OpenAI-compatible LLM proxy gateway for Kubernetes.
 type: application
-version: 0.1.0
-appVersion: "0.5.112"
+version: 0.1.1
+appVersion: "0.5.119"
 home: https://github.com/decolua/9router
 sources:
   - https://github.com/decolua/9router
