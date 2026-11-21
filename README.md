@@ -1,34 +1,8 @@
 # Helm Charts
 
-This repository contains community Helm charts for Kubernetes tooling and infrastructure components.
+Community Helm chart repository published via GitHub Pages and [chart-releaser](https://github.com/helm/chart-releaser).
 
-## Available Charts
-
-### [aws-alb-gateway](./charts/aws-alb-gateway)
-
-A Helm chart for managing Kubernetes Gateway API resources and AWS Load Balancer Controller Gateway resources on EKS.
-
-It can render:
-
-- `Gateway`
-- `HTTPRoute`
-- `LoadBalancerConfiguration`
-- `TargetGroupConfiguration`
-- Optional `ReferenceGrant`
-
-### [metrics-accumulator](./charts/metrics-accumulator)
-
-A Helm chart for [metrics-accumulator](https://github.com/bpoole6/metrics-accumulator), an alternative to Prometheus Pushgateway for ephemeral workloads.
-
-It includes:
-
-- Configurable deployment settings.
-- Service and ingress support.
-- Optional persistence.
-- Optional ServiceMonitor support for Prometheus Operator.
-- Security-related options such as NetworkPolicy and PodDisruptionBudget.
-
-## Installation
+## Usage
 
 Add the Helm repository:
 
@@ -37,41 +11,30 @@ helm repo add thangmai-charts https://ducthangqd1998.github.io/charts
 helm repo update
 ```
 
-Install a chart from the repository:
+Search available charts:
+
+```bash
+helm search repo thangmai-charts
+```
+
+Install a chart:
 
 ```bash
 helm install my-release thangmai-charts/<chart-name>
 ```
 
-Install a chart from source:
+## Available Charts
 
-```bash
-git clone https://github.com/ducthangqd1998/charts.git
-cd charts
-helm install my-release ./charts/<chart-name>
-```
+| Chart | Description | Documentation |
+|---|---|---|
+| **9router** | Unified AI routing and OpenAI-compatible LLM proxy gateway with Pod Security Standards (`Restricted`). | [9router README](https://github.com/ducthangqd1998/charts/blob/master/charts/9router/README.md) |
+| **aws-alb-gateway** | Manage Kubernetes Gateway API and AWS Load Balancer Controller Gateway resources on EKS. | [aws-alb-gateway README](https://github.com/ducthangqd1998/charts/blob/master/charts/aws-alb-gateway/README.md) |
+| **crw** | Self-hosted FastCRW web scraping, crawling, and AI search API with optional SearXNG integration. | [crw README](https://github.com/ducthangqd1998/charts/blob/master/charts/crw/README.md) |
+| **metrics-accumulator** | Alternative to Prometheus Pushgateway for collecting metrics from ephemeral workloads. | [metrics-accumulator README](https://github.com/ducthangqd1998/charts/blob/master/charts/metrics-accumulator/README.md) |
 
-## Documentation
+## Links
 
-- [aws-alb-gateway documentation](./charts/aws-alb-gateway/README.md)
-- [metrics-accumulator documentation](./charts/metrics-accumulator/README.md)
-- [Contributing guide](./CONTRIBUTING.md)
-
-## Chart Standards
-
-Charts in this repository should follow these standards:
-
-- Pass `helm lint`.
-- Render successfully with default values and documented examples.
-- Include clear default values.
-- Include a chart README with installation, configuration, examples, and troubleshooting notes.
-- Follow Kubernetes and Helm labeling conventions.
-- Avoid publishing environment-specific or organization-specific details in public examples.
-
-## Contributing
-
-Contributions, bug reports, and chart requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for development and review guidelines.
-
-## License
-
-Charts in this repository are distributed under the [Apache 2.0 License](./LICENSE).
+- [Source Repository (`master`)](https://github.com/ducthangqd1998/charts)
+- [Helm Repository Index (`index.yaml`)](https://ducthangqd1998.github.io/charts/index.yaml)
+- [Contributing Guide](https://github.com/ducthangqd1998/charts/blob/master/CONTRIBUTING.md)
+- [Releases](https://github.com/ducthangqd1998/charts/releases)
